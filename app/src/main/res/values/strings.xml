@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Is It Raining</string>
+
+    <string name="today_forecast_current_error_loading">Something messed up loading. No idea what the weather is.</string>
+    <string name="today_forecast_current_no_precipitation">it\'s not raining</string>
+    <string name="today_forecast_current_raining">it\'s raining</string>
+    <string name="today_forecast_current_thunderstorm">it\'s raining</string>
+    <string name="today_forecast_current_drizzle">it\'s raining a little</string>
+    <string name="today_forecast_current_snow">it\'s snowing</string>
+</resources>
