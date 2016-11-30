@@ -20,6 +20,13 @@ import java.util.Locale;
 /**
  * Fragment class that populates today's forecast and handles the results returned
  * from the async loader.
+ * //TODO request user location
+ * //TODO settings for user to set location
+ * //TODO popup screen with more weather information
+ * //TODO widget?
+ * //TODO store connection result, only query if result is one hour? old
+ * //TODO more strings for more weather accuracy
+ * //TODO Multiple weather sources?
  * @author Keegan Smith
  * @since 11/21/2016
  */
@@ -43,14 +50,14 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     }
 
     /**
-     * Refreshes the loader.
+     * Refreshes the loader on resume.
      */
     @Override
     public void onResume() {
         super.onResume();
         if (getLoaderManager().getLoader(0) != null) {
-            getLoaderManager().getLoader(0).onContentChanged();
-            showLayout(mProgressBar);
+         //   getLoaderManager().getLoader(0).onContentChanged();
+         //   showLayout(mProgressBar);
         }
     }
 
@@ -141,7 +148,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             String timeOfCalculation = new SimpleDateFormat("EEE MMM d 'at' h:mm a",Locale.getDefault()).format(new Date(rightNowEpoch));
             String currentWeather = getCurrentWeatherString(targetEntry.getWeatherCode());
 
-            String weatherText = currentWeather + " \n Weather data as of "+currentWeatherDateLong+" \n Calculated at "+timeOfCalculation;
+            String weatherText = currentWeather +"\n Weather Code: "+targetEntry.getWeatherCode()+"\n"+targetEntry.weatherMain+"\n"+targetEntry.weatherDescription+ " \n Weather data as of "+currentWeatherDateLong+" \n Calculated "+timeOfCalculation;
             mWeatherCurrentText.setText(weatherText);
 
 

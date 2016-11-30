@@ -1,7 +1,9 @@
 package com.smithkeegan.isitraining;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
@@ -47,22 +49,38 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
         ArrayList<WeatherEntry> result = null;
         HttpURLConnection connection = null;
         BufferedReader reader = null;
+        Boolean useLocationService = false;
 
         //Values for url parameters
         String location ="28604";
         String format = "json";
         String units = "imperial";
         String appID = "d048a247a1abec98e1fb96785f3ef9cf";
+
+        //Use saved device location if the user has opted to
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        if (preferences.getBoolean(getContext().getResources().getString(R.string.use_device_location),false)){
+            useLocationService = true;
+            location = "?"+preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
+        }
+
         try{
-            final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/?";
+            final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
             final String LOCATION_PARAM = "q";
             final String MODE_PARAM = "mode";
             final String UNITS_PARAM = "units";
             final String APPID_PARAM = "appid";
 
             //Build uri
-            Uri uri = Uri.parse(URL_BASE).buildUpon()
-                    .appendQueryParameter(LOCATION_PARAM,location)
+            Uri uri = Uri.parse(URL_BASE);
+
+            if (useLocationService){ //Use encoded location string if using phone location
+                uri = uri.buildUpon().appendEncodedPath(location).build();
+            }else { //Otherwise use location from settings
+                uri = uri.buildUpon().appendQueryParameter(LOCATION_PARAM,location).build();
+            }
+
+            uri = uri.buildUpon()
                     .appendQueryParameter(MODE_PARAM,format)
                     .appendQueryParameter(UNITS_PARAM,units)
                     .appendQueryParameter(APPID_PARAM,appID).build();
@@ -130,6 +148,7 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
         final String OWM_DATE = "dt";
         final String OWM_MAIN = "main";
         final String OWM_WEATHER_ID = "id";
+        final String OWM_WEATHER_DESCRIPTION = "description";
 
         //Create a JSON object from passed in string
         JSONObject forecastJson = new JSONObject(forecastJsonStr);
@@ -141,6 +160,8 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
             String shortDate;
             double temperature;
             int weatherID;
+            String weatherMain;
+            String weatherDescription;
 
             //Get this JSON object representing a 3 hour block
             JSONObject dayForecast = weatherArray.getJSONObject(i);
@@ -158,6 +179,8 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
             //Get the weather id from the weather json array titled "weather" that contains a single object
             JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
             weatherID = weatherObject.getInt(OWM_WEATHER_ID);
+            weatherMain = weatherObject.getString(OWM_MAIN);
+            weatherDescription = weatherObject.getString(OWM_WEATHER_DESCRIPTION);
 
             //Create a weather entry and pass in the collected values.
             WeatherEntry newEntry = new WeatherEntry();
@@ -165,6 +188,8 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
             newEntry.setDateShort(shortDate);
             newEntry.setTemperature(temperature);
             newEntry.setWeatherCode(weatherID);
+            newEntry.weatherMain = weatherMain;
+            newEntry.weatherDescription = weatherDescription;
 
             result.add(newEntry);
 

@@ -14,6 +14,8 @@ public class WeatherEntry {
     private int weatherCode;
     private double temperature;
     private String dateShort;
+    public String weatherMain;
+    public String weatherDescription;
 
     public double getTemperature() {
         return temperature;
