@@ -36,7 +36,6 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
 
     @Override
     protected void onStartLoading() {
-        forceLoad();
     }
 
     /**

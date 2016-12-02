@@ -5,12 +5,13 @@
     <string name="requested_location_permission" translatable="false">requested location permission</string>
     <string name="use_device_location" translatable="false">use device location</string>
     <string name="user_device_location_lat_long" translatable="false">user device location lat long</string>
+    <string name="last_forecast_timestamp" translatable="false">last forecast timestamp</string>
 
     <!-- Today Forecast -->
     <string name="today_forecast_current_error_loading">An error occurred while loading.</string>
     <string name="today_forecast_current_no_precipitation">it\'s not raining</string>
-    <string name="today_forecast_current_raining">it\'s raining</string>
-    <string name="today_forecast_current_thunderstorm">it\'s raining</string>
-    <string name="today_forecast_current_drizzle">it\'s raining a little</string>
-    <string name="today_forecast_current_snow">it\'s snowing</string>
+    <string name="today_forecast_current_small_chance_rain">it might be raining</string>
+    <string name="today_forecast_current_raining">it\'s probably raining</string>
+    <string name="today_forecast_current_thunderstorm">it\'s probably raining</string>
+    <string name="today_forecast_current_snow">it might be snowing</string>
 </resources>
