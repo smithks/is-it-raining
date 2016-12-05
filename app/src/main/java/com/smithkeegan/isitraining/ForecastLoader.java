@@ -2,10 +2,20 @@ package com.smithkeegan.isitraining;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,14 +38,29 @@ import static com.smithkeegan.isitraining.TodayForecastActivity.LOG_TAG;
 /**
  * Loader Class that pulls forecast information from opeaweathermap.org
  */
-public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
+public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>>
+    implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
+
+    private GoogleApiClient mGoogleApiClient; //Google Api Client for fetching device location
 
     public ForecastLoader(Context context) {
         super(context);
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext()).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
     }
 
     @Override
     protected void onStartLoading() {
+        if (mGoogleApiClient != null){
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onStopLoading() {
+        if (mGoogleApiClient != null){
+            mGoogleApiClient.disconnect();
+        }
+        super.onStopLoading();
     }
 
     /**
@@ -51,7 +76,7 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
         Boolean useLocationService = false;
 
         //Values for url parameters
-        String location ="28604";
+        String location =""; //Pull location from preference if allowing manual setting
         String format = "json";
         String units = "imperial";
         String appID = "d048a247a1abec98e1fb96785f3ef9cf";
@@ -138,6 +163,7 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
      */
     private ArrayList<WeatherEntry> getWeatherDataFromJson(String forecastJsonStr)
             throws JSONException {
+
         ArrayList<WeatherEntry> result = new ArrayList<>();
 
         // These are the names of the JSON objects that need to be extracted.
@@ -198,11 +224,48 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
     }
 
     /**
+     * Fetches the devices current location and saves that information to preferences for later use.
+     */
+    private void fetchLocationFromServices(){
+        //Check for location permission before requesting location
+        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+
+            Log.v(TodayForecastActivity.class.getSimpleName(),"Lat = "+ Double.toString(latitude) + " Lon = "+ Double.toString(longitude));
+
+            String userLocation = "lat="+Double.toString(latitude)+"&lon="+Double.toString(longitude);
+            //Indicate we want to use user location and save location coordinates.
+            PreferenceManager.getDefaultSharedPreferences(getContext()).edit()
+                    .putString(getContext().getResources().getString(R.string.user_device_location_lat_long),userLocation)
+                    .putBoolean(getContext().getResources().getString(R.string.use_device_location),true)
+                    .apply();
+        }
+    }
+
+    /**
      * Sends the resulting data to the caller.
      * @param data the result of the opeanweathermap query
      */
     @Override
     public void deliverResult(List<WeatherEntry> data) {
         super.deliverResult(data);
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        //fetchLocationFromServices();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
     }
 }
