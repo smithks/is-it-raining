@@ -7,8 +7,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,8 +29,6 @@ import static com.smithkeegan.isitraining.TodayForecastActivity.LOG_TAG;
  * Loader Class that pulls forecast information from opeaweathermap.org
  */
 public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
-
-    private GoogleApiClient mGoogleApiClient; //Google Api Client for fetching device location
 
     public ForecastLoader(Context context) {
         super(context);
@@ -90,6 +86,7 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
             //Begin connection
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
+            connection.setReadTimeout(8000); //Timeout after 8 seconds
             connection.connect();
 
             InputStream inputStream = connection.getInputStream();
@@ -110,10 +107,15 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
                 return null;
             }
 
+            Log.v(ForecastLoader.class.getSimpleName(),builder.toString());
+
             //Parse the raw json data
             result = getWeatherDataFromJson(builder.toString());
 
-        }catch (IOException | JSONException exception){
+        } catch (IOException exception){
+            Log.e(ForecastLoader.class.getSimpleName(),exception.getMessage() == null?"Connection timeout.":exception.getMessage());
+        }
+        catch (JSONException | NullPointerException exception){
 
             Log.e(ForecastLoader.class.getSimpleName(),exception.getMessage());
         }

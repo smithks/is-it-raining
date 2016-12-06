@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -43,8 +44,10 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
 
     private ProgressBar mProgressBar;
     private TextView mWeatherCurrentText;
+
     private String FORECAST_FILENAME = "forecast_stored";
-    private Boolean mDataLoaded;
+
+    private int ERROR_COUNT; //Keeps track of the current number of web query erros from this launch
 
     /**
      * Inflates the view for this fragment and handles initialization.
@@ -53,11 +56,17 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.today_forecast_fragment,container,false);
+
         setMemberViews(rootView);
-        //Create loader but do not run the loader
-        mDataLoaded = false;
-        getLoaderManager().initLoader(0,null,this);
+        initializeMemberVariables();
+
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        getActivity().getSupportLoaderManager().initLoader(0,null,this);
     }
 
     /**
@@ -76,6 +85,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     public void refreshForecast(){
         //Pull the timestamp of the last load to see if the data is out of date
         boolean dataOutOfDate = false;
+        /**
         long lastForecastTimestamp = PreferenceManager.getDefaultSharedPreferences(getContext()).getLong(getResources().getString(R.string.last_forecast_timestamp),0);
         if (lastForecastTimestamp > 0) { //Data present, see if it is current
             long currentTimestamp = Calendar.getInstance().getTimeInMillis();
@@ -94,17 +104,19 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                 startForecastLoader();
             }
         } //Otherwise data is loaded and it is still current, no change to data needed.
+         **/
+        startForecastLoader();
     }
 
     /**
      * Kicks off the forecast loader to fetch current forecast data.
      */
     private void startForecastLoader(){
-        if (getLoaderManager().getLoader(0) != null) {
-            //Trigger a reload by calling content changed
-            getLoaderManager().getLoader(0).onContentChanged();
+        //if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
             showLayout(mProgressBar);
-        }
+            //Trigger a reload
+            getActivity().getSupportLoaderManager().restartLoader(0,null,this).forceLoad();
+        //}
     }
 
     /**
@@ -144,8 +156,6 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private void updateForecastText(String currentForecast, boolean successfulLoad){
         mWeatherCurrentText.setText(currentForecast);
         showLayout(mWeatherCurrentText);
-
-        mDataLoaded = successfulLoad;
     }
 
     /**
@@ -168,6 +178,21 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         mWeatherCurrentText = (TextView) rootView.findViewById(R.id.today_forecast_weather_today_text);
     }
 
+    /**
+     * Initializes the member variables of this fragment.
+     */
+    private void initializeMemberVariables(){
+        ERROR_COUNT = 0;
+    }
+
+    /**
+     * Called when an error is encountered while loading and the needed data was not obtained.
+     */
+    private void handleLoadError(){
+        Toast.makeText(getContext(),getResources().getString(R.string.today_forecast_current_error_loading),Toast.LENGTH_LONG).show();
+        startForecastLoader();
+    }
+
 
     /**
      * Callback that is hit when the forecast loader delivers its results.
@@ -177,7 +202,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<List<WeatherEntry>> loader, List<WeatherEntry> data) {
         if (data == null){ //Error loading data, show error message
-            updateForecastText(getResources().getString(R.string.today_forecast_current_error_loading),false);
+            handleLoadError();
             return;
         }
 
@@ -225,7 +250,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         }
 
         if (targetEntry == null){ //No appropriate entry was found display error.
-            updateForecastText(getResources().getString(R.string.today_forecast_current_error_loading),false);
+            handleLoadError();
         }else { //Appropriate entry found, display it and the updated weather
             Date targetDate = targetEntry.getDateObject();
             String currentWeatherDate = new SimpleDateFormat("h a",Locale.getDefault()).format(targetDate);
