@@ -1,6 +1,8 @@
 package com.smithkeegan.isitraining;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -12,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,10 +47,13 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
 
     private ProgressBar mProgressBar;
     private TextView mWeatherCurrentText;
+    private RelativeLayout mErrorLayout;
 
     private String FORECAST_FILENAME = "forecast_stored";
-
+    private boolean mDataLoaded;
     private int ERROR_COUNT; //Keeps track of the current number of web query erros from this launch
+
+    private Toast mLastToast;
 
     /**
      * Inflates the view for this fragment and handles initialization.
@@ -55,7 +61,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.today_forecast_fragment,container,false);
+        View rootView = inflater.inflate(R.layout.today_forecast_fragment, container, false);
 
         setMemberViews(rootView);
         initializeMemberVariables();
@@ -66,7 +72,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getActivity().getSupportLoaderManager().initLoader(0,null,this);
+        getActivity().getSupportLoaderManager().initLoader(0, null, this);
     }
 
     /**
@@ -82,68 +88,76 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
      * Checks the current state of forecast data and refreshes data if needed or pulls the data from
      * storage.
      */
-    public void refreshForecast(){
+    public void refreshForecast() {
         //Pull the timestamp of the last load to see if the data is out of date
         boolean dataOutOfDate = false;
-        /**
-        long lastForecastTimestamp = PreferenceManager.getDefaultSharedPreferences(getContext()).getLong(getResources().getString(R.string.last_forecast_timestamp),0);
+        long lastForecastTimestamp = PreferenceManager.getDefaultSharedPreferences(getContext()).getLong(getResources().getString(R.string.last_forecast_timestamp), 0);
         if (lastForecastTimestamp > 0) { //Data present, see if it is current
             long currentTimestamp = Calendar.getInstance().getTimeInMillis();
-            if (currentTimestamp - lastForecastTimestamp > 3600000){ //If the saved forecast data is over an hour old then refresh the data
+            if (currentTimestamp - lastForecastTimestamp > 3600000) { //If the saved forecast data is over an hour old then refresh the data
                 dataOutOfDate = true;
             }
         }
 
-        //Pull data from appropriate location based on state of fragment.
-        if (dataOutOfDate || lastForecastTimestamp == 0) { //Fetch new data from loader if data is out of date or no saved data was found
+        //Make sure we have internet access
+        NetworkInfo networkStatus = ((ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+        if (!(networkStatus != null && networkStatus.isConnectedOrConnecting())) { //Display no internet error
+            handleLoadError(true,getResources().getString(R.string.today_forecast_error_no_internet));
+        }else {
             startForecastLoader();
-        }else if (!mDataLoaded){ //If data is not out of date and this is the first load of this fragment then pull from storage
+        }
+        /**
+        else if (dataOutOfDate || lastForecastTimestamp == 0) { //Fetch new data from loader if data is out of date or no saved data was found
+            startForecastLoader();
+        } else if (!mDataLoaded) { //If data is not out of date and this is the first load of this fragment then pull from storage
             boolean storageLoadSuccess = readForecastFromFile();
             //If we failed to load from storage then use loader.
-            if (!storageLoadSuccess){
+            if (!storageLoadSuccess) {
                 startForecastLoader();
             }
         } //Otherwise data is loaded and it is still current, no change to data needed.
-         **/
-        startForecastLoader();
+         */
+
     }
 
     /**
      * Kicks off the forecast loader to fetch current forecast data.
      */
-    private void startForecastLoader(){
-        //if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
-            showLayout(mProgressBar);
+    private void startForecastLoader() {
+        if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
+            if (mProgressBar.getVisibility() != View.VISIBLE) {
+                showLayout(mProgressBar);
+            }
             //Trigger a reload
-            getActivity().getSupportLoaderManager().restartLoader(0,null,this).forceLoad();
-        //}
+            getActivity().getSupportLoaderManager().restartLoader(0, null, this).forceLoad();
+        }
     }
 
     /**
      * Populates the forecast from data saved to internal storage.
      * @return false if the read fails, true if it succeeds
      */
-    private boolean readForecastFromFile(){
+    private boolean readForecastFromFile() {
         try {
             FileInputStream inputStream = getActivity().openFileInput(FORECAST_FILENAME);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             String line = null;
             StringBuilder savedForecast = new StringBuilder();
-            while ((line = reader.readLine()) != null){
+            while ((line = reader.readLine()) != null) {
                 savedForecast.append(line).append("\n");
             }
 
-            if (savedForecast.length() == 0){ //File was empty, reload from loader
+            if (savedForecast.length() == 0) { //File was empty, reload from loader
                 return false;
             }
 
             //Set the forecast
-            updateForecastText(savedForecast.toString(),true);
+            updateForecastText(savedForecast.toString(), true);
 
             reader.close();
             inputStream.close();
             return true;
-        }catch (IOException exception){ //Error reading from file
+        } catch (IOException exception) { //Error reading from file
             return false;
         }
     }
@@ -151,20 +165,25 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     /**
      * Updates the ui with new forecast information.
      * @param currentForecast The current forecast information
-     * @param successfulLoad true if the data to display is valid data
+     * @param successfulLoad  true if the data to display is valid data
      */
-    private void updateForecastText(String currentForecast, boolean successfulLoad){
+    private void updateForecastText(String currentForecast, boolean successfulLoad) {
         mWeatherCurrentText.setText(currentForecast);
-        showLayout(mWeatherCurrentText);
+        if (mWeatherCurrentText.getVisibility() != View.VISIBLE) {
+            showLayout(mWeatherCurrentText);
+        }
+
+        mDataLoaded = successfulLoad;
     }
 
     /**
      * Sets the passed in view to VISIBLE while hiding other views.
      * @param view the view to show
      */
-    private void showLayout(View view){
+    private void showLayout(View view) {
         mProgressBar.setVisibility(View.INVISIBLE);
         mWeatherCurrentText.setVisibility(View.INVISIBLE);
+        mErrorLayout.setVisibility(View.GONE);
 
         view.setVisibility(View.VISIBLE);
     }
@@ -173,99 +192,134 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
      * Initialize member views of this fragment.
      * @param rootView parent view of this fragment
      */
-    private void setMemberViews(View rootView){
+    private void setMemberViews(View rootView) {
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.today_forecast_progress_bar);
         mWeatherCurrentText = (TextView) rootView.findViewById(R.id.today_forecast_weather_today_text);
+        mErrorLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_error_layout);
     }
 
     /**
      * Initializes the member variables of this fragment.
      */
-    private void initializeMemberVariables(){
+    private void initializeMemberVariables() {
+        mDataLoaded = false;
         ERROR_COUNT = 0;
+
+        //Set listener for retry button.
+        mErrorLayout.findViewById(R.id.today_forecast_retry_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showToast(getResources().getString(R.string.today_forecast_current_retrying_toast), Toast.LENGTH_SHORT);
+                refreshForecast();
+            }
+        });
     }
 
     /**
      * Called when an error is encountered while loading and the needed data was not obtained.
+     * @param displayLayout true if we want to force the error layout to display
+     * @param errorMessage  the string to display for the error
      */
-    private void handleLoadError(){
-        Toast.makeText(getContext(),getResources().getString(R.string.today_forecast_current_error_loading),Toast.LENGTH_LONG).show();
-        startForecastLoader();
+    private void handleLoadError(boolean displayLayout, String errorMessage) {
+        ERROR_COUNT++;
+        if (ERROR_COUNT > 2 || displayLayout) { //If have tried 3 times without success then display server error text.
+            showLayout(mErrorLayout);
+            if (errorMessage == null){
+                errorMessage = getResources().getString(R.string.today_forecast_error_no_server_error);
+            }
+            ((TextView)mErrorLayout.findViewById(R.id.today_forecast_error_text)).setText(errorMessage);
+            ERROR_COUNT = 0; //Reset error count
+        } else { //Automatically retry if the error was encountered from loader.
+            showToast(getResources().getString(R.string.today_forecast_current_error_loading_toast),Toast.LENGTH_LONG);
+            startForecastLoader();
+        }
+    }
+
+    /**
+     * Central point to launch toasts. Makes sure we do not spam toasts.
+     * @param toastMessage the message to display
+     * @param toastLength the length of the message
+     */
+    private void showToast(String toastMessage,int toastLength){
+        if ((mLastToast != null && mLastToast.getView().getWindowVisibility() != View.VISIBLE) || mLastToast == null){
+            mLastToast = Toast.makeText(getContext(),toastMessage,toastLength);
+            mLastToast.show();
+        }
     }
 
 
     /**
      * Callback that is hit when the forecast loader delivers its results.
      * @param loader the loader that did the work
-     * @param data the result from the loader
+     * @param data   the result from the loader
      */
     @Override
     public void onLoadFinished(Loader<List<WeatherEntry>> loader, List<WeatherEntry> data) {
-        if (data == null){ //Error loading data, show error message
-            handleLoadError();
+        if (data == null) { //Error loading data, show error message
+            handleLoadError(false, null);
             return;
         }
 
         //Openweathermap sometimes returns older data, find the record closest to the current time to display
         long rightNowEpoch = Calendar.getInstance().getTime().getTime();
-        boolean currentWeatherFound = false,nextWeatherFound = false;
+        boolean currentWeatherFound = false, nextWeatherFound = false;
         int weatherIndex = 0, updateWeatherIndex = 0;
 
         //Find the entry that is closest to the current time to use as the current weather forecast
         WeatherEntry previous = null, following = null, targetEntry = null;
-        while (weatherIndex < data.size() && !currentWeatherFound){
+        while (weatherIndex < data.size() && !currentWeatherFound) {
             WeatherEntry currentEntry = data.get(weatherIndex);
             long entryEpoch = currentEntry.getDateObject().getTime();
 
-            if (rightNowEpoch - entryEpoch > 0){ //This is a historical weather entry
+            if (rightNowEpoch - entryEpoch > 0) { //This is a historical weather entry
                 previous = currentEntry;
-            }else if (rightNowEpoch - entryEpoch < 0){ //This is a future weather entry
+            } else if (rightNowEpoch - entryEpoch < 0) { //This is a future weather entry
                 following = currentEntry;
-            }else{ //This entry is for this exact moment (very rare)
+            } else { //This entry is for this exact moment (very rare)
                 targetEntry = currentEntry;
                 updateWeatherIndex = weatherIndex + 1;
             }
 
-            if (previous != null && following != null){ //Found surrounding entries, find the closest.
+            if (previous != null && following != null) { //Found surrounding entries, find the closest.
                 long previousEpoch = previous.getDateObject().getTime();
                 long followingEpoch = following.getDateObject().getTime();
-                if (Math.abs(rightNowEpoch - previousEpoch) < Math.abs(rightNowEpoch - followingEpoch)){ //Past entry is closer
+                if (Math.abs(rightNowEpoch - previousEpoch) < Math.abs(rightNowEpoch - followingEpoch)) { //Past entry is closer
                     targetEntry = previous;
                     updateWeatherIndex = weatherIndex;
-                }else{ //Future entry is closer
+                } else { //Future entry is closer
                     targetEntry = following;
-                    updateWeatherIndex = weatherIndex +1;
+                    updateWeatherIndex = weatherIndex + 1;
                 }
-            }else if (previous == null && following != null){ //Only future weather found, use that entry
+            } else if (previous == null && following != null) { //Only future weather found, use that entry
                 targetEntry = following;
-                updateWeatherIndex = weatherIndex +1;
+                updateWeatherIndex = weatherIndex + 1;
             } // Only other situations are target entry already found or only past found and need a future
 
             //If we found a target entry
-            if (targetEntry != null){
+            if (targetEntry != null) {
                 currentWeatherFound = true;
             }
 
             weatherIndex++;
         }
 
-        if (targetEntry == null){ //No appropriate entry was found display error.
-            handleLoadError();
-        }else { //Appropriate entry found, display it and the updated weather
+        if (targetEntry == null) { //No appropriate entry was found display error.
+            handleLoadError(false, null);
+        } else { //Appropriate entry found, display it and the updated weather
             Date targetDate = targetEntry.getDateObject();
-            String currentWeatherDate = new SimpleDateFormat("h a",Locale.getDefault()).format(targetDate);
-            String currentWeatherDateLong = new SimpleDateFormat("EEE MMM d 'at' h:mm a",Locale.getDefault()).format(targetDate);
-            String timeOfCalculation = new SimpleDateFormat("EEE MMM d 'at' h:mm a",Locale.getDefault()).format(new Date(rightNowEpoch));
+            String currentWeatherDate = new SimpleDateFormat("h a", Locale.getDefault()).format(targetDate);
+            String currentWeatherDateLong = new SimpleDateFormat("EEE MMM d 'at' h:mm a", Locale.getDefault()).format(targetDate);
+            String timeOfCalculation = new SimpleDateFormat("EEE MMM d 'at' h:mm a", Locale.getDefault()).format(new Date(rightNowEpoch));
             String currentWeather = getCurrentWeatherString(targetEntry.getWeatherCode());
 
-            String currentWeatherText = currentWeather +"\n Weather Code: "+targetEntry.getWeatherCode()+"\n"+targetEntry.weatherMain+"\n"+targetEntry.weatherDescription+ " \n Weather data as of "+currentWeatherDateLong+" \n Calculated "+timeOfCalculation;
+            String currentWeatherText = currentWeather + "\n Weather Code: " + targetEntry.getWeatherCode() + "\n" + targetEntry.weatherMain + "\n" + targetEntry.weatherDescription + " \n Weather data as of " + currentWeatherDateLong + " \n Calculated " + timeOfCalculation;
 
             //TODO Parse through remaining data to see if there is a weather change the user would want to know about
             //while (updateWeatherIndex < data.size() || !nextWeatherFound){
 
             //}
 
-            updateForecastText(currentWeatherText,true);
+            updateForecastText(currentWeatherText, true);
 
             //Cache this data by saving it to a file and saving data timestamp
             try {
@@ -277,9 +331,9 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
 
                 //Save the timestamp for this data
                 Calendar dataTimestamp = Calendar.getInstance();
-                PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putLong(getResources().getString(R.string.last_forecast_timestamp),dataTimestamp.getTimeInMillis()).apply();
-            }catch (IOException exception){
-                Log.e(TodayForecastFragment.class.getSimpleName(),"Error caching data: "+exception.getMessage());
+                PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putLong(getResources().getString(R.string.last_forecast_timestamp), dataTimestamp.getTimeInMillis()).apply();
+            } catch (IOException exception) {
+                Log.e(TodayForecastFragment.class.getSimpleName(), "Error caching data: " + exception.getMessage());
             }
         }
     }
@@ -298,19 +352,19 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
      * @param weatherCode the weather code to check
      * @return a user facing string representing the current weather
      */
-    private String getCurrentWeatherString(int weatherCode){
+    private String getCurrentWeatherString(int weatherCode) {
         String result = null;
-        if (weatherCode >= 200 && weatherCode <= 232){ //Thunderstorm
+        if (weatherCode >= 200 && weatherCode <= 232) { //Thunderstorm
             result = getResources().getString(R.string.today_forecast_current_thunderstorm);
-        } else if (weatherCode >= 300 && weatherCode <= 321){ //Drizzle
+        } else if (weatherCode >= 300 && weatherCode <= 321) { //Drizzle
             result = getResources().getString(R.string.today_forecast_current_small_chance_rain);
-        }else if (weatherCode == 500){
+        } else if (weatherCode == 500) {
             result = getResources().getString(R.string.today_forecast_current_small_chance_rain);
-        } else if (weatherCode >= 501 && weatherCode <= 531){ //Rain
+        } else if (weatherCode >= 501 && weatherCode <= 531) { //Rain
             result = getResources().getString(R.string.today_forecast_current_raining);
-        } else if (weatherCode >= 600 && weatherCode <= 622){ //Snow
+        } else if (weatherCode >= 600 && weatherCode <= 622) { //Snow
             result = getResources().getString(R.string.today_forecast_current_snow);
-        } else{
+        } else {
             result = getResources().getString(R.string.today_forecast_current_no_precipitation);
         }
         return result;

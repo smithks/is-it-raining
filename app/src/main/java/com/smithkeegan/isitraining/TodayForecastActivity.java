@@ -38,6 +38,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
 
     private final String LOCATION_LOADED_STATE_KEY = "LOCATION_LOADED_STATE_KEY";
     private boolean mLocationLoaded;
+    private int mLocationAttempt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,12 +50,9 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        //Clear the previous location loaded status
-        //PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean(getResources().getString(R.string.user_device_location_loaded),false).apply();
-
         //Create googleApiClient
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
-
+        mLocationAttempt = 0;
         //If we do not have the location permission request it now
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestLocationPermission();
@@ -82,6 +80,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         checkCurrentActivityState();
     }
 
+
     /**
      * Based on permissions and the current activity state, launch the forecast fragment. Called each time the
      * activity is resumed and after each initial set up step.
@@ -92,7 +91,13 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //If we have the appropriate permissions but do not have the location then load the location.
             if (!mLocationLoaded){
-                mGoogleApiClient.connect();
+                if (mLocationAttempt > 5){
+                  //TODO handle inability to get a location.
+                } else if (mGoogleApiClient.isConnected()){
+                    fetchLocationFromAPI();
+                }else {
+                    mGoogleApiClient.connect();
+                }
             }
             //If the fragment is not already displayed and the device location has been found then display the fragment.
             else if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST) == null && mLocationLoaded){
@@ -193,25 +198,27 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         if (mGoogleApiClient != null && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-            //Exit if no location was found
-            if (location == null){
-                return;
+            if(location != null) { //If we have a location then use it
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+
+                Log.v(TodayForecastActivity.class.getSimpleName(), "Lat = " + Double.toString(latitude) + " Lon = " + Double.toString(longitude));
+
+                String userLocation = "lat=" + Double.toString(latitude) + "&lon=" + Double.toString(longitude);
+                //Indicate we want to use user location and set location coordinates.
+                PreferenceManager.getDefaultSharedPreferences(this).edit()
+                        .putString(getResources().getString(R.string.user_device_location_lat_long), userLocation)
+                        .putBoolean(getResources().getString(R.string.use_device_location), true)
+                        .apply();
+
+                mLocationLoaded = true;
+            }else if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getResources().getString(R.string.user_device_location_lat_long),"").equals("")){
+                //Reuse old location if the call returned null and one is available
+                mLocationLoaded = true;
+            }else { //Unable to connect to location and no location previously saved.
+                mLocationAttempt++;
             }
-
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-
-            Log.v(TodayForecastActivity.class.getSimpleName(), "Lat = " + Double.toString(latitude) + " Lon = " + Double.toString(longitude));
-
-            String userLocation = "lat=" + Double.toString(latitude) + "&lon=" + Double.toString(longitude);
-            //Indicate we want to use user location and set location coordinates.
-            PreferenceManager.getDefaultSharedPreferences(this).edit()
-                    .putString(getResources().getString(R.string.user_device_location_lat_long), userLocation)
-                    .putBoolean(getResources().getString(R.string.use_device_location), true)
-                    .apply();
-
-            mLocationLoaded = true;
-            checkCurrentActivityState();
+            checkCurrentActivityState(); //Move to the next stage, or requery if we could'nt find a location.
         }
     }
 
