@@ -6,7 +6,7 @@
     android:layout_height="match_parent">
 
     <RelativeLayout
-        android:id="@+id/permissions_required_layout"
+        android:id="@+id/activity_error_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
@@ -15,7 +15,7 @@
 
 
         <TextView
-            android:id="@+id/permissions_required_text_view"
+            android:id="@+id/activity_error_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/permissions_required_string"
@@ -24,11 +24,11 @@
             android:padding="10dp"/>
 
         <Button
-            android:id="@+id/permissions_required_allow_button"
+            android:id="@+id/activity_error_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/string_allow"
-            android:layout_below="@id/permissions_required_text_view"
+            android:layout_below="@id/activity_error_text_view"
             android:layout_centerHorizontal="true"
             style="@style/button_style"/>
     </RelativeLayout>

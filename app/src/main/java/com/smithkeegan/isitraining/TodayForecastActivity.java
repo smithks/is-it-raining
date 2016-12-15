@@ -80,6 +80,13 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         checkCurrentActivityState();
     }
 
+    @Override
+    protected void onStop() {
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onStop();
+    }
 
     /**
      * Based on permissions and the current activity state, launch the forecast fragment. Called each time the
@@ -87,12 +94,11 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
      * Request User Permission -> Fetch Location -> Display Fragment
      */
     private void checkCurrentActivityState(){
-        //Can't do anything without the appropriate permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //If we have the appropriate permissions but do not have the location then load the location.
             if (!mLocationLoaded){
                 if (mLocationAttempt > 5){
-                  //TODO handle inability to get a location.
+                    handleLocationFetchError();
                 } else if (mGoogleApiClient.isConnected()){
                     fetchLocationFromAPI();
                 }else {
@@ -101,10 +107,10 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
             }
             //If the fragment is not already displayed and the device location has been found then display the fragment.
             else if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST) == null && mLocationLoaded){
-                findViewById(R.id.permissions_required_layout).setVisibility(View.GONE); //Hide the permissions required layout
+                findViewById(R.id.activity_error_layout).setVisibility(View.GONE); //Hide the permissions required layout
                 displayTodayForecastFragment();
             }
-        }else { //If we do not have permission then remove fragments if displayed.
+        }else { //If we do not have permission then remove fragments if displayed (user revoked permissions during runtime).
             Fragment todayForecast = getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST);
 
             if (todayForecast != null){
@@ -122,19 +128,6 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         transaction.commit();
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        if (mGoogleApiClient != null) {
-            mGoogleApiClient.disconnect();
-        }
-        super.onStop();
-    }
-
     /**
      * Handles the result from the request permissions dialog. Displays an explanation if the user refuses permissions.
      */
@@ -148,13 +141,13 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) { //Permission granted.
 
                 } else { //User denied permission, show explanation.
-                    TextView permissionsText = ((TextView) findViewById(R.id.permissions_required_text_view));
-                    Button permissionsButton = (Button) findViewById(R.id.permissions_required_allow_button);
+                    TextView permissionsText = ((TextView) findViewById(R.id.activity_error_text_view));
+                    Button permissionsButton = (Button) findViewById(R.id.activity_error_button);
 
-                    findViewById(R.id.permissions_required_layout).setVisibility(View.VISIBLE);
+                    findViewById(R.id.activity_error_layout).setVisibility(View.VISIBLE);
 
                     permissionsText.setText(getResources().getString(R.string.permissions_required_string));
-
+                    permissionsButton.setText(getResources().getString(R.string.string_allow));
                     //Set the listener for the allow permissions button
                     permissionsButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -220,6 +213,33 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
             }
             checkCurrentActivityState(); //Move to the next stage, or requery if we could'nt find a location.
         }
+    }
+
+    /**
+     * Called when we are unable to fetch the device location after multiple attempts.
+     */
+    private void handleLocationFetchError(){
+        TextView locationError = (TextView) findViewById(R.id.activity_error_text_view);
+        Button locationButton = (Button) findViewById(R.id.activity_error_button);
+
+        findViewById(R.id.activity_error_layout).setVisibility(View.VISIBLE);
+
+        locationError.setText(getResources().getString(R.string.activity_location_unavailable));
+        locationButton.setText(getResources().getString(R.string.today_forecast_button_retry));
+
+        locationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                restartActivity();
+            }
+        });
+    }
+
+    /**
+     * Called by retry button when we fail to get the users location.
+     */
+    private void restartActivity(){
+        this.recreate();
     }
 
     @Override

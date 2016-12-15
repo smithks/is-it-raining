@@ -9,6 +9,7 @@
     <!-- Hosting Activity -->
     <string name="permissions_required_string">Location services are required in order to provide you with the most accurate weather forecast</string>
     <string name="permissions_required_string_long">Location services are required in order to provide you with the most accurate weather forecast. \n\nThe button below will direct you to your app settings page where you can allow location services.</string>
+    <string name="activity_location_unavailable">Location services were unable to retrieve your device location</string>
     <string name="string_allow">Allow</string>
 
     <!-- Today Forecast -->
@@ -21,5 +22,5 @@
     <string name="today_forecast_current_snow">it might be snowing</string>
     <string name="today_forecast_button_retry">retry</string>
     <string name="today_forecast_error_no_internet">An internet connection is needed to fetch forecast information</string>
-    <string name="today_forecast_error_no_server_error">Oops! Our servers are all currently busy. Please retry in a moment</string>
+    <string name="today_forecast_error_no_server_error">Our servers are all currently busy. Please retry in a moment</string>
 </resources>

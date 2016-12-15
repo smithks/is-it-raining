@@ -7,21 +7,19 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 import static com.smithkeegan.isitraining.TodayForecastActivity.LOG_TAG;
 
@@ -109,8 +107,12 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
 
             Log.v(ForecastLoader.class.getSimpleName(),builder.toString());
 
+
             //Parse the raw json data
-            result = getWeatherDataFromJson(builder.toString());
+            result = ForecastJSONParser.getEntriesFromJSON(builder.toString());
+
+            //Cache the JSON data so we do not have to read so often
+            saveJSONData(builder.toString());
 
         } catch (IOException exception){
             Log.e(ForecastLoader.class.getSimpleName(),exception.getMessage() == null?"Connection timeout.":exception.getMessage());
@@ -134,70 +136,21 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
         return result;
     }
 
-    /**
-     * Take the String representing the complete forecast in JSON Format and
-     * pull out the data we need to construct the Strings needed.
-     */
-    private ArrayList<WeatherEntry> getWeatherDataFromJson(String forecastJsonStr)
-            throws JSONException {
+    private void saveJSONData(String jsonstr){
+        //Cache this data by saving it to a file and saving data timestamp
+        try {
+            FileOutputStream outputStream = getContext().openFileOutput(TodayForecastFragment.FORECAST_FILENAME, Context.MODE_PRIVATE);
+            OutputStreamWriter streamWriter = new OutputStreamWriter(outputStream);
+            streamWriter.write(jsonstr);
+            streamWriter.close();
+            outputStream.close();
 
-        ArrayList<WeatherEntry> result = new ArrayList<>();
-
-        // These are the names of the JSON objects that need to be extracted.
-        final String OWM_LIST = "list";
-        final String OWM_WEATHER = "weather";
-        final String OWM_TEMPERATURE = "temp";
-        final String OWM_DATE = "dt";
-        final String OWM_MAIN = "main";
-        final String OWM_WEATHER_ID = "id";
-        final String OWM_WEATHER_DESCRIPTION = "description";
-
-        //Create a JSON object from passed in string
-        JSONObject forecastJson = new JSONObject(forecastJsonStr);
-
-        //Get array of weather data divided in 3 hour chunks
-        JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
-
-        for(int i = 0; i < weatherArray.length(); i++) {
-            String shortDate;
-            double temperature;
-            int weatherID;
-            String weatherMain;
-            String weatherDescription;
-
-            //Get this JSON object representing a 3 hour block
-            JSONObject dayForecast = weatherArray.getJSONObject(i);
-
-            //Get the UTC timestamp for this block
-            long dateTime = dayForecast.getLong(OWM_DATE);
-
-            //Format the date as the hour followed by am/pm marker. ex "5 PM"
-            Date dateObject = new Date(dateTime * 1000); //Convert from seconds to milliseconds
-            shortDate = new SimpleDateFormat("h a",Locale.getDefault()).format(dateObject);
-
-            //Get temperature from "main" object
-            temperature = dayForecast.getJSONObject(OWM_MAIN).getDouble(OWM_TEMPERATURE);
-
-            //Get the weather id from the weather json array titled "weather" that contains a single object
-            JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
-            weatherID = weatherObject.getInt(OWM_WEATHER_ID);
-            weatherMain = weatherObject.getString(OWM_MAIN);
-            weatherDescription = weatherObject.getString(OWM_WEATHER_DESCRIPTION);
-
-            //Create a weather entry and pass in the collected values.
-            WeatherEntry newEntry = new WeatherEntry();
-            newEntry.setDateObject(dateObject);
-            newEntry.setDateShort(shortDate);
-            newEntry.setTemperature(temperature);
-            newEntry.setWeatherCode(weatherID);
-            newEntry.weatherMain = weatherMain;
-            newEntry.weatherDescription = weatherDescription;
-
-            result.add(newEntry);
-
+            //Save the timestamp for this data
+            Calendar dataTimestamp = Calendar.getInstance();
+            PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putLong(getContext().getResources().getString(R.string.last_forecast_timestamp), dataTimestamp.getTimeInMillis()).apply();
+        } catch (IOException exception) {
+            Log.e(TodayForecastFragment.class.getSimpleName(), "Error caching data: " + exception.getMessage());
         }
-
-        return result;
     }
 
     /**
