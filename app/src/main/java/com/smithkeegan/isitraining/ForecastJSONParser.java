@@ -46,18 +46,15 @@ public class ForecastJSONParser {
             String weatherMain;
             String weatherDescription;
 
-            //Get this JSON object representing a 3 hour block
-            JSONObject dayForecast = weatherArray.getJSONObject(i);
+            JSONObject dayForecast = weatherArray.getJSONObject(i); //Get this JSON object representing a 3 hour block
 
-            //Get the UTC timestamp for this block
-            long dateTime = dayForecast.getLong(OWM_DATE);
+            long dateTime = dayForecast.getLong(OWM_DATE); //Get the UTC timestamp for this block
 
             //Format the date as the hour followed by am/pm marker. ex "5 PM"
             Date dateObject = new Date(dateTime * 1000); //Convert from seconds to milliseconds
             shortDate = new SimpleDateFormat("h a", Locale.getDefault()).format(dateObject);
 
-            //Get temperature from "main" object
-            temperature = dayForecast.getJSONObject(OWM_MAIN).getDouble(OWM_TEMPERATURE);
+            temperature = dayForecast.getJSONObject(OWM_MAIN).getDouble(OWM_TEMPERATURE); //Get temperature from "main" object
 
             //Get the weather id from the weather json array titled "weather" that contains a single object
             JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
@@ -75,7 +72,6 @@ public class ForecastJSONParser {
             newEntry.weatherDescription = weatherDescription;
 
             result.add(newEntry);
-
         }
 
         return result;

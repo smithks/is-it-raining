@@ -19,14 +19,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 import static com.smithkeegan.isitraining.TodayForecastActivity.LOG_TAG;
 
 /**
  * Loader Class that pulls forecast information from opeaweathermap.org
  */
-public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
+public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
     public ForecastLoader(Context context) {
         super(context);
@@ -38,45 +37,32 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
      * @return formatted forecast data returned from openweathermap.org
      */
     @Override
-    public List<WeatherEntry> loadInBackground() {
+    public ArrayList<WeatherEntry> loadInBackground() {
         ArrayList<WeatherEntry> result = null;
         HttpURLConnection connection = null;
         BufferedReader reader = null;
-        Boolean useLocationService = false;
 
         //Values for url parameters
-        String location =""; //Pull location from preference if allowing manual setting
         String format = "json";
         String units = "imperial";
         String appID = "d048a247a1abec98e1fb96785f3ef9cf";
 
-        //Use saved device location if the user has opted to
+        //Use saved device location
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
-        if (preferences.getBoolean(getContext().getResources().getString(R.string.use_device_location),false)){
-            useLocationService = true;
-            location = "?"+preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
-        }
+        String location = "?"+preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
+
+        final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
+        final String MODE_PARAM = "mode";
+        final String UNITS_PARAM = "units";
+        final String APPID_PARAM = "appid";
 
         try{
-            final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
-            final String LOCATION_PARAM = "q";
-            final String MODE_PARAM = "mode";
-            final String UNITS_PARAM = "units";
-            final String APPID_PARAM = "appid";
-
             //Build uri
-            Uri uri = Uri.parse(URL_BASE);
-
-            if (useLocationService){ //Use encoded location string if using phone location
-                uri = uri.buildUpon().appendEncodedPath(location).build();
-            }else { //Otherwise use location from settings
-                uri = uri.buildUpon().appendQueryParameter(LOCATION_PARAM,location).build();
-            }
-
-            uri = uri.buildUpon()
+            Uri uri = Uri.parse(URL_BASE).buildUpon()
+                    .appendEncodedPath(location)
                     .appendQueryParameter(MODE_PARAM,format)
                     .appendQueryParameter(UNITS_PARAM,units)
-                    .appendQueryParameter(APPID_PARAM,appID).build();
+                    .appendQueryParameter(APPID_PARAM,appID).build();;
 
             URL url = new URL(uri.toString());
             Log.v(ForecastLoader.class.getSimpleName(),uri.toString());
@@ -90,10 +76,6 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
             InputStream inputStream = connection.getInputStream();
             StringBuilder builder = new StringBuilder();
 
-            if (inputStream == null){
-                return null;
-            }
-
             reader = new BufferedReader(new InputStreamReader(inputStream));
             String line;
 
@@ -101,24 +83,23 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
                 builder.append(line).append("/n");
             }
 
-            if (builder.length() == 0){
+            if (builder.length() == 0){ //Handle empty JSON
                 return null;
             }
 
-            Log.v(ForecastLoader.class.getSimpleName(),builder.toString());
-
+            String rawJSON = builder.toString();
+            Log.v(ForecastLoader.class.getSimpleName(),rawJSON);
 
             //Parse the raw json data
-            result = ForecastJSONParser.getEntriesFromJSON(builder.toString());
+            result = ForecastJSONParser.getEntriesFromJSON(rawJSON);
 
-            //Cache the JSON data so we do not have to read so often
-            saveJSONData(builder.toString());
+            //Cache the JSON data to avoid frequent queries
+            saveJSONData(rawJSON);
 
         } catch (IOException exception){
             Log.e(ForecastLoader.class.getSimpleName(),exception.getMessage() == null?"Connection timeout.":exception.getMessage());
         }
         catch (JSONException | NullPointerException exception){
-
             Log.e(ForecastLoader.class.getSimpleName(),exception.getMessage());
         }
         finally { //Cleanup open objects.
@@ -136,11 +117,15 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
         return result;
     }
 
+    /**
+     * Saves the retrieved JSON str to avoid duplicate url connections.
+     * @param jsonstr the raw json str
+     */
     private void saveJSONData(String jsonstr){
-        //Cache this data by saving it to a file and saving data timestamp
         try {
             FileOutputStream outputStream = getContext().openFileOutput(TodayForecastFragment.FORECAST_FILENAME, Context.MODE_PRIVATE);
             OutputStreamWriter streamWriter = new OutputStreamWriter(outputStream);
+            Log.v(ForecastLoader.class.getSimpleName(),"Saved JSON: "+jsonstr);
             streamWriter.write(jsonstr);
             streamWriter.close();
             outputStream.close();
@@ -158,7 +143,7 @@ public class ForecastLoader extends AsyncTaskLoader<List<WeatherEntry>> {
      * @param data the result of the opeanweathermap query
      */
     @Override
-    public void deliverResult(List<WeatherEntry> data) {
+    public void deliverResult(ArrayList<WeatherEntry> data) {
         super.deliverResult(data);
     }
 
