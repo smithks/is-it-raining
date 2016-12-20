@@ -26,6 +26,16 @@
             android:layout_centerInParent="true"
             />
 
+        <Button
+            android:id="@+id/today_forecast_show_extended_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/today_forecast_weather_today_text"
+            android:layout_centerHorizontal="true"
+            android:text="show more"
+            />
+
+
     </RelativeLayout>
 
     <RelativeLayout

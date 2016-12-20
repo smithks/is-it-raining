@@ -1,5 +1,8 @@
 package com.smithkeegan.isitraining;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.Date;
 
 /**
@@ -8,7 +11,7 @@ import java.util.Date;
  * @since 11/23/2016
  */
 
-public class WeatherEntry {
+public class WeatherEntry implements Parcelable {
 
     private Date dateObject;
     private int weatherCode;
@@ -16,6 +19,30 @@ public class WeatherEntry {
     private String dateShort;
     public String weatherMain;
     public String weatherDescription;
+
+    protected WeatherEntry(Parcel in) {
+        weatherCode = in.readInt();
+        temperature = in.readDouble();
+        dateShort = in.readString();
+        weatherMain = in.readString();
+        weatherDescription = in.readString();
+    }
+
+    public WeatherEntry(){
+
+    }
+
+    public static final Creator<WeatherEntry> CREATOR = new Creator<WeatherEntry>() {
+        @Override
+        public WeatherEntry createFromParcel(Parcel in) {
+            return new WeatherEntry(in);
+        }
+
+        @Override
+        public WeatherEntry[] newArray(int size) {
+            return new WeatherEntry[size];
+        }
+    };
 
     public double getTemperature() {
         return temperature;
@@ -47,5 +74,19 @@ public class WeatherEntry {
 
     public void setDateObject(Date dateObject) {
         this.dateObject = dateObject;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeInt(weatherCode);
+        parcel.writeDouble(temperature);
+        parcel.writeString(dateShort);
+        parcel.writeString(weatherMain);
+        parcel.writeString(weatherDescription);
     }
 }

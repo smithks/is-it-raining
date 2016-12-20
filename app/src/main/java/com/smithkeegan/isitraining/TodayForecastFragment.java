@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -47,7 +48,9 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private ProgressBar mProgressBar;
     private RelativeLayout mErrorLayout;
     private RelativeLayout mWeatherLayout;
+    private Button mShowMoreButton;
 
+    public static final String FORECAST_DIALOG_TAG = "forecast_dialog_tag";
     public static final String FORECAST_FILENAME = "forecast_stored";
     private boolean mDataLoaded;
     private int ERROR_COUNT; //Keeps track of the current number of web query erros from this launch
@@ -164,14 +167,14 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     }
 
     /**
-     * Takes an array of Weather Entry items and updates the current forecast and future forecast information.
+     * Uses an array of Weather Entry items and updates the current forecast and future forecast information.
      * @param entries the weather entries to use
      */
     private void processWeatherObjects(ArrayList<WeatherEntry> entries) {
         //Openweathermap sometimes returns older data, find the record closest to the current time to display
         long rightNowEpoch = Calendar.getInstance().getTime().getTime();
-        boolean currentWeatherFound = false, nextWeatherFound = false;
-        int weatherIndex = 0, updateWeatherIndex = 0;
+        boolean currentWeatherFound = false;
+        int weatherIndex = 0;
 
         //Find the entry that is closest to the current time to use as the current weather forecast
         WeatherEntry previous = null, following = null, targetEntry = null;
@@ -183,9 +186,8 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                 previous = currentEntry;
             } else if (rightNowEpoch - entryEpoch < 0) { //This is a future weather entry
                 following = currentEntry;
-            } else { //This entry is for this exact moment (very rare)
+            } else { //This entry is for this exact moment (should never happen)
                 targetEntry = currentEntry;
-                updateWeatherIndex = weatherIndex + 1;
             }
 
             if (previous != null && following != null) { //Found surrounding entries, find the closest.
@@ -193,14 +195,11 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                 long followingEpoch = following.getDateObject().getTime();
                 if (Math.abs(rightNowEpoch - previousEpoch) < Math.abs(rightNowEpoch - followingEpoch)) { //Past entry is closer
                     targetEntry = previous;
-                    updateWeatherIndex = weatherIndex;
                 } else { //Future entry is closer
                     targetEntry = following;
-                    updateWeatherIndex = weatherIndex + 1;
                 }
             } else if (previous == null && following != null) { //Only future weather found, use that entry
                 targetEntry = following;
-                updateWeatherIndex = weatherIndex + 1;
             } // Only other situations are target entry already found or only past found and need a future
 
             //If we found a target entry
@@ -220,14 +219,10 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             String timeOfCalculation = new SimpleDateFormat("EEE MMM d 'at' h:mm a", Locale.getDefault()).format(new Date(rightNowEpoch));
             String currentWeather = getCurrentWeatherString(targetEntry.getWeatherCode());
 
-            String currentWeatherText = currentWeather + "\n Weather Code: " + targetEntry.getWeatherCode() + "\n" + targetEntry.weatherMain + "\n" + targetEntry.weatherDescription;
-
-            //TODO Parse through remaining data to see if there is a weather change the user would want to know about
-            //while (updateWeatherIndex < data.size() || !nextWeatherFound){
-
-            //}
+            String currentWeatherText = currentWeather;
 
             updateForecastText(currentWeatherText);
+            updateExtendedForecast(entries);
             mDataLoaded = true;
         }
     }
@@ -241,6 +236,21 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         weatherCurrentText.setText(currentForecast);
 
         showLayout(mWeatherLayout);
+    }
+
+    private void updateExtendedForecast(final ArrayList<WeatherEntry> entries){
+
+        mShowMoreButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ExtendedForecastDialog extendedForecast = new ExtendedForecastDialog();
+                Bundle args = new Bundle();
+                args.putParcelableArrayList(ExtendedForecastDialog.FORECAST_KEY,entries);
+                extendedForecast.setArguments(args);
+                extendedForecast.show(getActivity().getSupportFragmentManager(),FORECAST_DIALOG_TAG);
+            }
+        });
+
     }
 
     /**
@@ -263,6 +273,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.today_forecast_progress_bar);
         mErrorLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_error_layout);
         mWeatherLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_weather_layout);
+        mShowMoreButton = (Button) rootView.findViewById(R.id.today_forecast_show_extended_button);
     }
 
     /**
