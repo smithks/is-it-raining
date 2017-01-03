@@ -23,4 +23,5 @@
     <string name="today_forecast_button_retry">retry</string>
     <string name="today_forecast_error_no_internet">An internet connection is needed to fetch forecast information</string>
     <string name="today_forecast_error_no_server_error">Our servers are all currently busy. Please retry in a moment</string>
+    <string name="today_forecast_show_more">show more</string>
 </resources>

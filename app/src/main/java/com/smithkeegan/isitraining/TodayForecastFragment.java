@@ -8,12 +8,14 @@ import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -48,7 +50,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private ProgressBar mProgressBar;
     private RelativeLayout mErrorLayout;
     private RelativeLayout mWeatherLayout;
-    private Button mShowMoreButton;
+    private ImageButton mShowMoreButton;
 
     public static final String FORECAST_DIALOG_TAG = "forecast_dialog_tag";
     public static final String FORECAST_FILENAME = "forecast_stored";
@@ -273,7 +275,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.today_forecast_progress_bar);
         mErrorLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_error_layout);
         mWeatherLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_weather_layout);
-        mShowMoreButton = (Button) rootView.findViewById(R.id.today_forecast_show_extended_button);
+        mShowMoreButton = (ImageButton) rootView.findViewById(R.id.today_forecast_show_extended_button);
     }
 
     /**
@@ -290,6 +292,22 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                 showToast(getResources().getString(R.string.today_forecast_current_retrying_toast), Toast.LENGTH_SHORT);
                 refreshForecast();
             }
+        });
+
+        mShowMoreButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN){ //Button pressed
+                    mShowMoreButton.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button_pressed));
+                    return true;
+                }else if (motionEvent.getAction() == MotionEvent.ACTION_UP){ //Button released
+                    mShowMoreButton.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button));
+                    return true;
+                }
+                return false;
+            }
+
+
         });
     }
 
