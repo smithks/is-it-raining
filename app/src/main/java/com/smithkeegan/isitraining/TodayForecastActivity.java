@@ -190,7 +190,6 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         //Check for location permission before requesting location
         if (mGoogleApiClient != null && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
             if(location != null) { //If we have a location then use it
                 double latitude = location.getLatitude();
                 double longitude = location.getLongitude();

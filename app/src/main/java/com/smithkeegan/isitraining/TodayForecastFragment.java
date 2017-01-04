@@ -3,6 +3,7 @@ package com.smithkeegan.isitraining;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -240,19 +241,35 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         showLayout(mWeatherLayout);
     }
 
+    /**
+     * Updates the touch listener and data that is passed to the extended weather forecast dialog.
+     * @param entries the weather entries that are passed to the forecast dialog
+     */
     private void updateExtendedForecast(final ArrayList<WeatherEntry> entries){
 
-        mShowMoreButton.setOnClickListener(new View.OnClickListener() {
+        mShowMoreButton.setOnTouchListener(new View.OnTouchListener() {
+
             @Override
-            public void onClick(View view) {
-                ExtendedForecastDialog extendedForecast = new ExtendedForecastDialog();
-                Bundle args = new Bundle();
-                args.putParcelableArrayList(ExtendedForecastDialog.FORECAST_KEY,entries);
-                extendedForecast.setArguments(args);
-                extendedForecast.show(getActivity().getSupportFragmentManager(),FORECAST_DIALOG_TAG);
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN){ //Button pressed
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){ //Hanldle button pressed animation on older versions
+                        view.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button_pressed));
+                    }
+                }else if (motionEvent.getAction() == MotionEvent.ACTION_UP){ //Button released
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){ //Handle button released animation on older version
+                        view.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button));
+                    }
+                    if (view.isPressed()) {
+                        ExtendedForecastDialog extendedForecast = new ExtendedForecastDialog();
+                        Bundle args = new Bundle();
+                        args.putParcelableArrayList(ExtendedForecastDialog.FORECAST_KEY, entries);
+                        extendedForecast.setArguments(args);
+                        extendedForecast.show(getActivity().getSupportFragmentManager(), FORECAST_DIALOG_TAG);
+                    }
+                }
+                return false;
             }
         });
-
     }
 
     /**
@@ -294,21 +311,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             }
         });
 
-        mShowMoreButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN){ //Button pressed
-                    mShowMoreButton.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button_pressed));
-                    return true;
-                }else if (motionEvent.getAction() == MotionEvent.ACTION_UP){ //Button released
-                    mShowMoreButton.setBackground(ContextCompat.getDrawable(getContext(),R.drawable.show_more_button));
-                    return true;
-                }
-                return false;
-            }
 
-
-        });
     }
 
     /**
