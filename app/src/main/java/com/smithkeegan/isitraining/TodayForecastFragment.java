@@ -1,6 +1,7 @@
 package com.smithkeegan.isitraining;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -13,10 +14,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -28,20 +33,13 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 
 /**
- * Fragment class that populates today's forecast and handles the results returned
- * from the async loader.
- * //TODO settings for user to set location?
- * //TODO popup screen with more weather information
- * //TODO widget?
- * //TODO more strings for more weather accuracy
- * //TODO Multiple weather sources?
+ * Fragment class that displays today's forecast. If stored forecast data is out of date on resume then a ForecastLoader is used to fetch weather
+ * data in the background. When new weather data is fetched the loader stores it in internal storage and a time stamp stored in shared
+ * preferences is used to see if the data is current(<1h old). This fragment also populates the data in the ExtendedForecastDialog and handles its launch.
  * @author Keegan Smith
  * @since 11/21/2016
  */
@@ -50,8 +48,9 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
 
     private ProgressBar mProgressBar;
     private RelativeLayout mErrorLayout;
-    private RelativeLayout mWeatherLayout;
+    private LinearLayout mWeatherLayout;
     private ImageButton mShowMoreButton;
+    private ImageButton mSettingsButton;
 
     public static final String FORECAST_DIALOG_TAG = "forecast_dialog_tag";
     public static final String FORECAST_FILENAME = "forecast_stored";
@@ -59,6 +58,8 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private int ERROR_COUNT; //Keeps track of the current number of web query erros from this launch
 
     private Toast mLastToast;
+
+    private String mLocation;
 
     /**
      * Inflates the view for this fragment and handles initialization.
@@ -104,11 +105,13 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             }
         }
 
+        boolean manualRefreshTriggered = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(getResources().getString(R.string.trigger_reload_key),false);
+
         //Make sure we have internet access
         NetworkInfo networkStatus = ((ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
         if (!(networkStatus != null && networkStatus.isConnectedOrConnecting())) { //Display no internet error
             handleLoadError(true, getResources().getString(R.string.today_forecast_error_no_internet));
-        } else if (dataOutOfDate || lastForecastTimestamp == 0) { //Fetch new data from loader if data is out of date or no saved data was found
+        } else if (dataOutOfDate || lastForecastTimestamp == 0 || manualRefreshTriggered) { //Fetch new data from loader if data is out of date or no saved data was found or a manual refresh was triggered
             startForecastLoader();
         } else if (!mDataLoaded) { //If data is not out of date and this is the first load of this fragment then pull from storage
             boolean storageLoadSuccess = readForecastFromFile();
@@ -140,7 +143,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         try {
             FileInputStream inputStream = getActivity().openFileInput(FORECAST_FILENAME);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String line = null;
+            String line;
             StringBuilder savedForecast = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 savedForecast.append(line).append("\n");
@@ -152,7 +155,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
 
             Log.v(TodayForecastFragment.class.getSimpleName(), "Retrieved JSON: " + savedForecast);
 
-            ArrayList<WeatherEntry> entries = ForecastJSONParser.getEntriesFromJSON(savedForecast.toString());
+            ArrayList<WeatherEntry> entries = ForecastJSONParser.getEntriesFromJSON(savedForecast.toString(), getContext());
             //Set the forecast
             processWeatherObjects(entries);
             mDataLoaded = true;
@@ -216,16 +219,14 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         if (targetEntry == null) { //No appropriate entry was found display error.
             handleLoadError(false, null);
         } else { //Appropriate entry found, display it and the updated weather
-            Date targetDate = targetEntry.getDateObject();
-            String currentWeatherDate = new SimpleDateFormat("h a", Locale.getDefault()).format(targetDate);
-            String currentWeatherDateLong = new SimpleDateFormat("EEE MMM d 'at' h:mm a", Locale.getDefault()).format(targetDate);
-            String timeOfCalculation = new SimpleDateFormat("EEE MMM d 'at' h:mm a", Locale.getDefault()).format(new Date(rightNowEpoch));
-            String currentWeather = getCurrentWeatherString(targetEntry.getWeatherCode());
+            String currentWeatherCode = getCurrentWeatherString(targetEntry.getWeatherCode());
 
-            String currentWeatherText = currentWeather;
+            mLocation = targetEntry.getLocation();
 
-            updateForecastText(currentWeatherText);
+            updateForecastText(currentWeatherCode);
             updateExtendedForecast(entries);
+
+            PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putBoolean(getResources().getString(R.string.trigger_reload_key),false).apply(); //Clear manual refresh trigger
             mDataLoaded = true;
         }
     }
@@ -263,6 +264,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                         ExtendedForecastDialog extendedForecast = new ExtendedForecastDialog();
                         Bundle args = new Bundle();
                         args.putParcelableArrayList(ExtendedForecastDialog.FORECAST_KEY, entries);
+                        args.putString(ExtendedForecastDialog.LOCATION_KEY,mLocation);
                         extendedForecast.setArguments(args);
                         extendedForecast.show(getActivity().getSupportFragmentManager(), FORECAST_DIALOG_TAG);
                     }
@@ -291,8 +293,9 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private void setMemberViews(View rootView) {
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.today_forecast_progress_bar);
         mErrorLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_error_layout);
-        mWeatherLayout = (RelativeLayout) rootView.findViewById(R.id.today_forecast_weather_layout);
+        mWeatherLayout = (LinearLayout) rootView.findViewById(R.id.today_forecast_weather_layout);
         mShowMoreButton = (ImageButton) rootView.findViewById(R.id.today_forecast_show_extended_button);
+        mSettingsButton = (ImageButton) rootView.findViewById(R.id.today_forecast_settings_button);
     }
 
     /**
@@ -311,6 +314,27 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             }
         });
 
+        mSettingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                PopupMenu popupMenu = new PopupMenu(getActivity(),view);
+                final MenuInflater inflater = popupMenu.getMenuInflater();
+                inflater.inflate(R.menu.settings_menu,popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        switch (menuItem.getItemId()){
+                            case R.id.action_settings:
+                                Intent intent = new Intent(getContext(),SettingsActivity.class);
+                                startActivity(intent);
+                                return true;
+                        }
+                        return false;
+                    }
+                });
+                popupMenu.show();
+            }
+        });
 
     }
 
@@ -378,7 +402,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
      * @return a user facing string representing the current weather
      */
     private String getCurrentWeatherString(int weatherCode) {
-        String result = null;
+        String result;
         if (weatherCode >= 200 && weatherCode <= 232) { //Thunderstorm
             result = getResources().getString(R.string.today_forecast_current_thunderstorm);
         } else if (weatherCode >= 300 && weatherCode <= 321) { //Drizzle

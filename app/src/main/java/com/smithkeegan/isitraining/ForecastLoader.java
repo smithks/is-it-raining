@@ -20,10 +20,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 import static com.smithkeegan.isitraining.TodayForecastActivity.LOG_TAG;
 
 /**
- * Loader Class that pulls forecast information from opeaweathermap.org
+ * Loader Class that pulls forecast information from opeaweathermap.org.
+ * Fetches weather data as raw JSON which is parsed into WeatherEntry objects before being passed back to caller.
+ * A copy of the weather data is stored to internal storage to avoid duplicate calls.
+ * @author Keegan
+ * @since 12/14/16
  */
 public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
@@ -44,11 +49,11 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
         //Values for url parameters
         String format = "json";
-        String units = "imperial";
+        String units = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getContext().getResources().getString(R.string.settings_temperature_units_key), getContext().getResources().getString(R.string.settings_temperature_units_default));
         String appID = "d048a247a1abec98e1fb96785f3ef9cf";
 
         //Use saved device location
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences preferences = getDefaultSharedPreferences(getContext());
         String location = "?"+preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
 
         final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
@@ -91,7 +96,7 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
             Log.v(ForecastLoader.class.getSimpleName(),rawJSON);
 
             //Parse the raw json data
-            result = ForecastJSONParser.getEntriesFromJSON(rawJSON);
+            result = ForecastJSONParser.getEntriesFromJSON(rawJSON, getContext());
 
             //Cache the JSON data to avoid frequent queries
             saveJSONData(rawJSON);
@@ -132,7 +137,7 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
             //Save the timestamp for this data
             Calendar dataTimestamp = Calendar.getInstance();
-            PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putLong(getContext().getResources().getString(R.string.last_forecast_timestamp), dataTimestamp.getTimeInMillis()).apply();
+            getDefaultSharedPreferences(getContext()).edit().putLong(getContext().getResources().getString(R.string.last_forecast_timestamp), dataTimestamp.getTimeInMillis()).apply();
         } catch (IOException exception) {
             Log.e(TodayForecastFragment.class.getSimpleName(), "Error caching data: " + exception.getMessage());
         }

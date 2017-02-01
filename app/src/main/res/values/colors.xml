@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#3a506b</color>
-    <color name="colorPrimaryDark">#1c2541</color>
-    <color name="colorAccent">#6fffe9</color>
+    <color name="colorPrimaryDark">#304661</color>
+    <color name="colorAccent">#f47742</color>
     <color name="accentDark">#5bc0b3</color>
 
     <!-- General Use -->
     <color name="black">#000000</color>
     <color name="white">#ffffff</color>
     <color name="textBoxBackground">#f2f2f2</color>
+    <color name="todayHighlightColor">@color/colorAccent</color>
 
-    <color name="background_color">@color/colorPrimary</color>
+    <color name="background_color">#EBF1FF</color>
 
 </resources>

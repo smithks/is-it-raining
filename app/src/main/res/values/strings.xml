@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Is It Raining</string>
+    <string name="app_name">Is It Pouring</string>
 
     <!-- Preference Keys -->
     <string name="use_device_location" translatable="false">use device location</string>
@@ -24,4 +24,40 @@
     <string name="today_forecast_error_no_internet">An internet connection is needed to fetch forecast information</string>
     <string name="today_forecast_error_no_server_error">Our servers are all currently busy. Please retry in a moment</string>
     <string name="today_forecast_show_more">show more</string>
+    <string name="trigger_reload_key" translatable="false">triggerReload</string>
+
+    <!-- Extended Forecast -->
+    <string name="extended_forecast_today_text">Today</string>
+    <string name="extended_forecast_icon_content_description">Weather Forecast Icon</string>
+    <string name="extended_forecast_weather_light_drizzle">Light drizzle</string>
+    <string name="extended_forecast_weather_heavy_drizzle">Heavy drizzle</string>
+    <string name="extended_forecast_weather_light_drizzle_rain">Light drizzle rain</string>
+    <string name="extended_forecast_weather_heavy_drizzle_rain">Heavy drizzle rain</string>
+    <string name="extended_forecast_weather_showers_and_drizzle">Showers and drizzle</string>
+    <string name="extended_forecast_weather_heavy_showers_and_drizzle">Heavy showers and drizzle</string>
+    <string name="extended_forecast_weather_clear_sky">Clear</string>
+    <string name="extended_forecast_weather_heavy_rain">Heavy rain</string>
+    <string name="extended_forecast_weather_rain_showers">Rain showers</string>
+    <string name="extended_forecast_weather_light_showers">Light rain showers</string>
+    <string name="extended_forecast_weather_heavy_showers">Heavy rain showers</string>
+    <string name="extended_forecast_weather_ragged_showers">Ragged rain showers</string>
+    <string name="extended_forecast_weather_sleet_showers">Sleet showers</string>
+    <string name="extended_forecast_weather_light_snow_showers">Light snow showers</string>
+    <string name="extended_forecast_weather_snow_showers">Snow showers</string>
+    <string name="extended_forecast_weather_heavy_snow_showers">Heavy snow showers</string>
+
+    <!-- Settings -->
+    <string name="settings_string">Settings</string>
+    <string name="settings_temperature_units_display_title">Temperature Units</string>
+    <string name="settings_temperature_units_key" translatable="false">TemperatureUnits</string>
+    <string name="settings_temperature_units_default">imperial</string>
+    <string-array name="settings_temperature_entries">
+        <item>Fahrenheit</item>
+        <item>Celsius</item>
+    </string-array>
+    <string-array name="settings_temperature_values">
+        <item>imperial</item>
+        <item>metric</item>
+    </string-array>
+
 </resources>

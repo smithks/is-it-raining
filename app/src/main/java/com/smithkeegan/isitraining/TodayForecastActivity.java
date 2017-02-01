@@ -26,6 +26,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 /**
+ * Launching activity for Is It Pouring.
+ * Makes sure we have the location permission before fetching this devices location and
+ * launching the TodayForecastFragment fragment.
  * @author Keegan Smith
  * @since 11/21/2016
  */
@@ -45,10 +48,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         super.onCreate(savedInstanceState);
         setContentView(R.layout.today_forecast_activity);
 
-        //Hide title in action bar
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-        }
+        PreferenceManager.setDefaultValues(this,R.xml.preferences,false); //Set preference defaults
 
         //Create googleApiClient
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
@@ -95,8 +95,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
      */
     private void checkCurrentActivityState(){
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            //If we have the appropriate permissions but do not have the location then load the location.
-            if (!mLocationLoaded){
+            if (!mLocationLoaded) { //If we have the appropriate permissions but do not have the location then load the location.
                 if (mLocationAttempt > 5){
                     handleLocationFetchError();
                 } else if (mGoogleApiClient.isConnected()){
@@ -185,6 +184,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
 
     /**
      * Uses GoogleApiClient to get the devices location if proper permissions are available.
+     * Stores this location into shared preferences for later access.
      */
     private void fetchLocationFromAPI() {
         //Check for location permission before requesting location

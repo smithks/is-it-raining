@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/permissions_required_string"
-            style="@style/centered_large_text"
+            style="@style/error_message_text"
             android:background="@color/textBoxBackground"
             android:padding="10dp"/>
 
