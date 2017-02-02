@@ -32,7 +32,6 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Preference preference = findPreference(key);
-        mSharedPreferences.edit().putBoolean("triggerReload",true).apply(); //Trigger the weather data to reload. Possible loss of attached activity so hardcoded key.
         updatePreference(preference);
     }
 

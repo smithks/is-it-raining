@@ -3,7 +3,6 @@ package com.smithkeegan.isitraining;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
@@ -49,7 +48,6 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
         //Values for url parameters
         String format = "json";
-        String units = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getContext().getResources().getString(R.string.settings_temperature_units_key), getContext().getResources().getString(R.string.settings_temperature_units_default));
         String appID = "d048a247a1abec98e1fb96785f3ef9cf";
 
         //Use saved device location
@@ -58,7 +56,6 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
         final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
         final String MODE_PARAM = "mode";
-        final String UNITS_PARAM = "units";
         final String APPID_PARAM = "appid";
 
         try{
@@ -66,7 +63,6 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
             Uri uri = Uri.parse(URL_BASE).buildUpon()
                     .appendEncodedPath(location)
                     .appendQueryParameter(MODE_PARAM,format)
-                    .appendQueryParameter(UNITS_PARAM,units)
                     .appendQueryParameter(APPID_PARAM,appID).build();;
 
             URL url = new URL(uri.toString());

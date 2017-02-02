@@ -119,11 +119,28 @@ public class ExtendedForecastDialog extends DialogFragment {
             ((TextView)convertView.findViewById(R.id.extended_forecast_item_time)).setText(entry.getWeatherTime());
 
             String units = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getResources().getString(R.string.settings_temperature_units_key),getResources().getString(R.string.settings_temperature_units_default));
-            String tempStr = (int)entry.getTemperature() + (units.equals("imperial")?"\u2109":"\u2103"); //Use appropriate unit label
+            int unitTemp = convertKelvin(entry.getTemperature(),units);
+            String tempStr = unitTemp + (units.equals("imperial")?"\u2109":"\u2103"); //Use appropriate unit label
             ((TextView)convertView.findViewById(R.id.extended_forecast_item_temperature)).setText(tempStr);
             ((TextView)convertView.findViewById(R.id.extended_forecast_item_weather)).setText(entry.getWeatherDescription());
             ((ImageView)convertView.findViewById(R.id.extended_forecast_item_weather_icon)).setImageDrawable(ContextCompat.getDrawable(getContext(),entry.getWeatherIcon()));
             return convertView;
         }
+    }
+
+    /**
+     * Converts the given temp in Kelvin to the specified new temperature unit.
+     * @param temp temp to convert
+     * @param newUnit new temperature  unit
+     * @return converted temperature
+     */
+    private int convertKelvin(double temp, String newUnit){
+        int newTemp;
+        if (newUnit.equals("metric")){
+            newTemp =(int)(temp - 273.15); //Convert Kelvin to celsius
+        }else{
+            newTemp = (int)(temp * 9 / 5 - 459.67); //Convert Kelvin to fahrenheit
+        }
+        return newTemp;
     }
 }
