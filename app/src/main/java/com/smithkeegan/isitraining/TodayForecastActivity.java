@@ -196,7 +196,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
 
                 Log.v(TodayForecastActivity.class.getSimpleName(), "Lat = " + Double.toString(latitude) + " Lon = " + Double.toString(longitude));
 
-                String userLocation = "lat=" + Double.toString(latitude) + "&lon=" + Double.toString(longitude);
+                String userLocation = Double.toString(latitude) + " " + Double.toString(longitude);
                 //Indicate we want to use user location and set location coordinates.
                 PreferenceManager.getDefaultSharedPreferences(this).edit()
                         .putString(getResources().getString(R.string.user_device_location_lat_long), userLocation)

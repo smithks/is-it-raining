@@ -52,16 +52,20 @@ public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 
         //Use saved device location
         SharedPreferences preferences = getDefaultSharedPreferences(getContext());
-        String location = "?"+preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
+        String location = preferences.getString(getContext().getResources().getString(R.string.user_device_location_lat_long),"");
+        String[] coords = location.split(" ");
 
-        final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast/";
+        final String URL_BASE = "http://api.openweathermap.org/data/2.5/forecast";
         final String MODE_PARAM = "mode";
         final String APPID_PARAM = "appid";
+        final String LAT_PARAM = "lat";
+        final String LON_PARAM = "lon";
 
         try{
             //Build uri
             Uri uri = Uri.parse(URL_BASE).buildUpon()
-                    .appendEncodedPath(location)
+                    .appendQueryParameter(LAT_PARAM, coords[0])
+                    .appendQueryParameter(LON_PARAM, coords[1])
                     .appendQueryParameter(MODE_PARAM,format)
                     .appendQueryParameter(APPID_PARAM,appID).build();;
 
