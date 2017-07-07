@@ -1,16 +1,18 @@
 package com.isitraining.keegansmith.is_it_pouring_refactor.Network.Model;
 
+import java.util.List;
+
 /**
  * Created by keegansmith on 7/7/17.
  */
 
 public class ForecastInstant {
-    public double temp;
-    public double temp_min;
-    public double temp_max;
-    public double pressure;
-    public double sea_level;
-    public double grnd_level;
-    public int humidity;
-    public double temp_kf;
+    public double dt;
+    public ForecastInstantMain main;
+    public List<ForecastInstantWeather> weather;
+    public ForecastInstantClouds clouds;
+    public ForecastInstantWind wind;
+    public ForecastInstantSys sys;
+    public String dt_txt;
+
 }
