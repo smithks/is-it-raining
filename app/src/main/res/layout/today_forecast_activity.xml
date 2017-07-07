@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/today_forecast_activity_layout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/activity_error_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_margin="20dp"
+        android:visibility="gone">
+
+
+        <TextView
+            android:id="@+id/activity_error_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/permissions_required_string"
+            style="@style/error_message_text"
+            android:background="@color/textBoxBackground"
+            android:padding="10dp"/>
+
+        <Button
+            android:id="@+id/activity_error_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/string_allow"
+            android:layout_below="@id/activity_error_text_view"
+            android:layout_centerHorizontal="true"
+            style="@style/button_style"/>
+    </RelativeLayout>
+</RelativeLayout>

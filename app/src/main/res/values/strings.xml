@@ -1,3 +1,63 @@
 <resources>
-    <string name="app_name">Is-It-Pouring-Refactor</string>
+    <string name="app_name">Is It Pouring</string>
+
+    <!-- Preference Keys -->
+    <string name="use_device_location" translatable="false">use device location</string>
+    <string name="user_device_location_lat_long" translatable="false">user device location lat long</string>
+    <string name="last_forecast_timestamp" translatable="false">last forecast timestamp</string>
+
+    <!-- Hosting Activity -->
+    <string name="permissions_required_string">Location services are required in order to provide you with the most accurate weather forecast</string>
+    <string name="permissions_required_string_long">Location services are required in order to provide you with the most accurate weather forecast. \n\nThe button below will direct you to your app settings page where you can allow location services.</string>
+    <string name="activity_location_unavailable">Location services were unable to retrieve your device location</string>
+    <string name="string_allow">Allow</string>
+
+    <!-- Today Forecast -->
+    <string name="today_forecast_current_error_loading_toast">Oops! Something went wrong. Retrying.</string>
+    <string name="today_forecast_current_retrying_toast">Retrying</string>
+    <string name="today_forecast_current_no_precipitation">it\'s not raining</string>
+    <string name="today_forecast_current_small_chance_rain">it might be raining</string>
+    <string name="today_forecast_current_raining">it\'s probably raining</string>
+    <string name="today_forecast_current_thunderstorm">it\'s probably raining</string>
+    <string name="today_forecast_current_snow">it might be snowing</string>
+    <string name="today_forecast_button_retry">retry</string>
+    <string name="today_forecast_error_no_internet">An internet connection is needed to fetch forecast information</string>
+    <string name="today_forecast_error_no_server_error">Our servers are all currently busy. Please retry in a moment</string>
+    <string name="today_forecast_show_more">show more</string>
+    <string name="trigger_reload_key" translatable="false">triggerReload</string>
+
+    <!-- Extended Forecast -->
+    <string name="extended_forecast_today_text">Today</string>
+    <string name="extended_forecast_icon_content_description">Weather Forecast Icon</string>
+    <string name="extended_forecast_weather_light_drizzle">Light drizzle</string>
+    <string name="extended_forecast_weather_heavy_drizzle">Heavy drizzle</string>
+    <string name="extended_forecast_weather_light_drizzle_rain">Light drizzle rain</string>
+    <string name="extended_forecast_weather_heavy_drizzle_rain">Heavy drizzle rain</string>
+    <string name="extended_forecast_weather_showers_and_drizzle">Showers and drizzle</string>
+    <string name="extended_forecast_weather_heavy_showers_and_drizzle">Heavy showers and drizzle</string>
+    <string name="extended_forecast_weather_clear_sky">Clear</string>
+    <string name="extended_forecast_weather_heavy_rain">Heavy rain</string>
+    <string name="extended_forecast_weather_rain_showers">Rain showers</string>
+    <string name="extended_forecast_weather_light_showers">Light rain showers</string>
+    <string name="extended_forecast_weather_heavy_showers">Heavy rain showers</string>
+    <string name="extended_forecast_weather_ragged_showers">Ragged rain showers</string>
+    <string name="extended_forecast_weather_sleet_showers">Sleet showers</string>
+    <string name="extended_forecast_weather_light_snow_showers">Light snow showers</string>
+    <string name="extended_forecast_weather_snow_showers">Snow showers</string>
+    <string name="extended_forecast_weather_heavy_snow_showers">Heavy snow showers</string>
+
+    <!-- Settings -->
+    <string name="settings_string">Settings</string>
+    <string name="settings_temperature_units_display_title">Temperature Units</string>
+    <string name="settings_temperature_units_key" translatable="false">TemperatureUnits</string>
+    <string name="settings_temperature_units_default">imperial</string>
+    <string-array name="settings_temperature_entries">
+        <item>Fahrenheit</item>
+        <item>Celsius</item>
+    </string-array>
+    <string-array name="settings_temperature_values">
+        <item>imperial</item>
+        <item>metric</item>
+    </string-array>
+
 </resources>
