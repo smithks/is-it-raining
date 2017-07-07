@@ -29,6 +29,7 @@ import com.google.android.gms.location.LocationServices;
  * Launching activity for Is It Pouring.
  * Makes sure we have the location permission before fetching this devices location and
  * launching the TodayForecastFragment fragment.
+ *
  * @author Keegan Smith
  * @since 11/21/2016
  */
@@ -48,7 +49,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         super.onCreate(savedInstanceState);
         setContentView(R.layout.today_forecast_activity);
 
-        PreferenceManager.setDefaultValues(this,R.xml.preferences,false); //Set preference defaults
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false); //Set preference defaults
 
         //Create googleApiClient
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
@@ -62,14 +63,14 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        if (savedInstanceState.containsKey(LOCATION_LOADED_STATE_KEY)){
+        if (savedInstanceState.containsKey(LOCATION_LOADED_STATE_KEY)) {
             mLocationLoaded = savedInstanceState.getBoolean(LOCATION_LOADED_STATE_KEY);
         }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean(LOCATION_LOADED_STATE_KEY,mLocationLoaded);
+        outState.putBoolean(LOCATION_LOADED_STATE_KEY, mLocationLoaded);
         super.onSaveInstanceState(outState);
     }
 
@@ -93,26 +94,26 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
      * activity is resumed and after each initial set up step.
      * Request User Permission -> Fetch Location -> Display Fragment
      */
-    private void checkCurrentActivityState(){
+    private void checkCurrentActivityState() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (!mLocationLoaded) { //If we have the appropriate permissions but do not have the location then load the location.
-                if (mLocationAttempt > 5){
+                if (mLocationAttempt > 5) {
                     handleLocationFetchError();
-                } else if (mGoogleApiClient.isConnected()){
+                } else if (mGoogleApiClient.isConnected()) {
                     fetchLocationFromAPI();
-                }else {
+                } else {
                     mGoogleApiClient.connect();
                 }
             }
             //If the fragment is not already displayed and the device location has been found then display the fragment.
-            else if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST) == null && mLocationLoaded){
+            else if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST) == null && mLocationLoaded) {
                 findViewById(R.id.activity_error_layout).setVisibility(View.GONE); //Hide the permissions required layout
                 displayTodayForecastFragment();
             }
-        }else { //If we do not have permission then remove fragments if displayed (user revoked permissions during runtime).
+        } else { //If we do not have permission then remove fragments if displayed (user revoked permissions during runtime).
             Fragment todayForecast = getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_TODAY_FORECAST);
 
-            if (todayForecast != null){
+            if (todayForecast != null) {
                 getSupportFragmentManager().beginTransaction().remove(todayForecast).commit();
             }
         }
@@ -137,9 +138,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         }
         switch (requestCode) {
             case LOCATION_REQUEST_CODE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) { //Permission granted.
-
-                } else { //User denied permission, show explanation.
+                if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) { //User denied permission, show explanation.
                     TextView permissionsText = ((TextView) findViewById(R.id.activity_error_text_view));
                     Button permissionsButton = (Button) findViewById(R.id.activity_error_button);
 
@@ -190,7 +189,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
         //Check for location permission before requesting location
         if (mGoogleApiClient != null && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            if(location != null) { //If we have a location then use it
+            if (location != null) { //If we have a location then use it
                 double latitude = location.getLatitude();
                 double longitude = location.getLongitude();
 
@@ -204,10 +203,10 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
                         .apply();
 
                 mLocationLoaded = true;
-            }else if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getResources().getString(R.string.user_device_location_lat_long),"").equals("")){
+            } else if (!PreferenceManager.getDefaultSharedPreferences(this).getString(getResources().getString(R.string.user_device_location_lat_long), "").equals("")) {
                 //Reuse old location if the call returned null and one is available
                 mLocationLoaded = true;
-            }else { //Unable to connect to location and no location previously saved.
+            } else { //Unable to connect to location and no location previously saved.
                 mLocationAttempt++;
             }
             checkCurrentActivityState(); //Move to the next stage, or requery if we could'nt find a location.
@@ -217,7 +216,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
     /**
      * Called when we are unable to fetch the device location after multiple attempts.
      */
-    private void handleLocationFetchError(){
+    private void handleLocationFetchError() {
         TextView locationError = (TextView) findViewById(R.id.activity_error_text_view);
         Button locationButton = (Button) findViewById(R.id.activity_error_button);
 
@@ -237,7 +236,7 @@ public class TodayForecastActivity extends AppCompatActivity implements GoogleAp
     /**
      * Called by retry button when we fail to get the users location.
      */
-    private void restartActivity(){
+    private void restartActivity() {
         this.recreate();
     }
 

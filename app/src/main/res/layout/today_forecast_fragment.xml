@@ -18,6 +18,7 @@
         android:id="@+id/today_forecast_settings_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/weather_icon_01d"
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"/>
 

@@ -104,6 +104,7 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
                 dataOutOfDate = true;
             }
         }
+        dataOutOfDate = true; //TODO remove this line, forces network query for testing.
 
         boolean manualRefreshTriggered = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(getResources().getString(R.string.trigger_reload_key),false);
 
