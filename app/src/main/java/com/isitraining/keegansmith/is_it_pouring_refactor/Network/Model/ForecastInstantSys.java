@@ -6,4 +6,12 @@ package com.isitraining.keegansmith.is_it_pouring_refactor.Network.Model;
 
 public class ForecastInstantSys {
     public String pod;
+
+    public String getPod() {
+        return pod;
+    }
+
+    public void setPod(String pod) {
+        this.pod = pod;
+    }
 }
