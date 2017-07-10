@@ -125,8 +125,8 @@ public class ExtendedForecastDialog extends DialogFragment {
             int unitTemp = convertKelvin(entry.getTemperature(),units);
             String tempStr = unitTemp + (units.equals("imperial")?"\u2109":"\u2103"); //Use appropriate unit label
             ((TextView)convertView.findViewById(R.id.extended_forecast_item_temperature)).setText(tempStr);
-            ((TextView)convertView.findViewById(R.id.extended_forecast_item_weather)).setText(entry.getWeatherDescription());
-            ((ImageView)convertView.findViewById(R.id.extended_forecast_item_weather_icon)).setImageDrawable(ContextCompat.getDrawable(getContext(),entry.getWeatherIcon()));
+            ((TextView)convertView.findViewById(R.id.extended_forecast_item_weather)).setText(entry.getWeatherDescriptionRaw());
+            //((ImageView)convertView.findViewById(R.id.extended_forecast_item_weather_icon)).setImageDrawable(ContextCompat.getDrawable(getContext(),entry.getWeatherIconIdentifier()));
             return convertView;
         }
     }

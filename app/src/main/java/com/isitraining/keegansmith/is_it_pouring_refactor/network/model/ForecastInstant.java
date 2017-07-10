@@ -7,7 +7,7 @@ import java.util.List;
  */
 
 public class ForecastInstant {
-    public double dt;
+    public long dt;
     public ForecastInstantMain main;
     public List<ForecastInstantWeather> weather;
     public ForecastInstantClouds clouds;
@@ -15,11 +15,11 @@ public class ForecastInstant {
     public ForecastInstantSys sys;
     public String dt_txt;
 
-    public double getDt() {
+    public long getDt() {
         return dt;
     }
 
-    public void setDt(double dt) {
+    public void setDt(long dt) {
         this.dt = dt;
     }
 

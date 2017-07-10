@@ -23,8 +23,8 @@ public class WeatherEntry implements Parcelable {
     private String dateShort; // ex. Wed, January 25
     private String weatherTime; //ex. 4:00 pm
     private boolean isToday;
-    private String weatherDescription;
-    private int weatherIcon;
+    private String weatherDescriptionRaw;
+    private String weatherIconIdentifier;
 
     protected WeatherEntry(Parcel in) {
         weatherCode = in.readInt();
@@ -32,8 +32,8 @@ public class WeatherEntry implements Parcelable {
         dateShort = in.readString();
         weatherTime = in.readString();
         isToday = in.readInt() == 1;
-        weatherDescription = in.readString();
-        weatherIcon = in.readInt();
+        weatherDescriptionRaw = in.readString();
+        weatherIconIdentifier = in.readString();
     }
 
     public WeatherEntry() {
@@ -68,12 +68,12 @@ public class WeatherEntry implements Parcelable {
         this.weatherTime = weatherTime;
     }
 
-    public int getWeatherIcon() {
-        return weatherIcon;
+    public String getWeatherIconIdentifier() {
+        return weatherIconIdentifier;
     }
 
-    public void setWeatherIcon(int weatherIcon) {
-        this.weatherIcon = weatherIcon;
+    public void setWeatherIconIdentifier(String weatherIconIdentifier) {
+        this.weatherIconIdentifier = weatherIconIdentifier;
     }
 
     public double getTemperature() {
@@ -116,12 +116,12 @@ public class WeatherEntry implements Parcelable {
         this.location = location;
     }
 
-    public String getWeatherDescription() {
-        return weatherDescription;
+    public String getWeatherDescriptionRaw() {
+        return weatherDescriptionRaw;
     }
 
-    public void setWeatherDescription(String weatherDescription) {
-        this.weatherDescription = weatherDescription;
+    public void setWeatherDescriptionRaw(String weatherDescriptionRaw) {
+        this.weatherDescriptionRaw = weatherDescriptionRaw;
     }
 
     @Override
@@ -136,7 +136,7 @@ public class WeatherEntry implements Parcelable {
         parcel.writeString(dateShort);
         parcel.writeString(weatherTime);
         parcel.writeInt(isToday? 1: 0);
-        parcel.writeString(weatherDescription);
-        parcel.writeInt(weatherIcon);
+        parcel.writeString(weatherDescriptionRaw);
+        parcel.writeString(weatherIconIdentifier);
     }
 }

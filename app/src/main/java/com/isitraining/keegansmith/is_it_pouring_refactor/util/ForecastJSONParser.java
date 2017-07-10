@@ -23,81 +23,81 @@ import java.util.Locale;
 
 public class ForecastJSONParser {
 
-    /**
-     * Take the String representing the complete forecast in JSON Format and
-     * pull out the data we need to construct the Strings needed.
-     */
-    public static ArrayList<WeatherEntry> getEntriesFromJSON(String forecastJsonStr, Context context) throws JSONException{
-        ArrayList<WeatherEntry> result = new ArrayList<>();
-
-        // These are the names of the JSON objects that need to be extracted.
-        final String OWM_LIST = "list";
-        final String OWM_WEATHER = "weather";
-        final String OWM_TEMPERATURE = "temp";
-        final String OWM_DATE = "dt";
-        final String OWM_MAIN = "main";
-        final String OWM_WEATHER_ID = "id";
-        final String OWM_WEATHER_DESCRIPTION = "description";
-        final String OWM_WEATHER_ICON = "icon";
-        final String OWM_CITY = "city";
-        final String OWM_CITY_NAME = "name";
-        final String OWM_CITY_COUNTRY = "country";
-
-        //Create a JSON object from passed in string
-        JSONObject forecastJson = new JSONObject(forecastJsonStr);
-
-        //Get the location the weather data is for
-        JSONObject cityObject = forecastJson.getJSONObject(OWM_CITY);
-        String location = cityObject.getString(OWM_CITY_NAME) + ", "+cityObject.getString(OWM_CITY_COUNTRY);
-
-        //Get array of weather data divided in 3 hour chunks
-        JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
-
-        Calendar currentTime = Calendar.getInstance();
-
-        for(int i = 0; i < weatherArray.length(); i++) {
-            String shortDate,shortTime;
-            double temperature;
-            int weatherID;
-            String weatherDescription;
-            String weatherIcon;
-
-            JSONObject dayForecast = weatherArray.getJSONObject(i); //Get this JSON object representing a 3 hour block
-
-            long dateTime = dayForecast.getLong(OWM_DATE); //Get the UTC timestamp for this block
-
-            //Format the date as the hour followed by am/pm marker. ex "5 PM"
-            Date dateObject = new Date(dateTime * 1000); //Convert from seconds to milliseconds
-            Calendar calendarObject = Calendar.getInstance();
-            calendarObject.setTime(dateObject);
-            shortDate = new SimpleDateFormat("EEE, MMMM d", Locale.getDefault()).format(dateObject);
-            shortTime = new SimpleDateFormat("h:mm a",Locale.getDefault()).format(dateObject);
-
-            temperature = dayForecast.getJSONObject(OWM_MAIN).getDouble(OWM_TEMPERATURE); //Get temperature from "main" object
-
-            //Get the weather id from the weather json array titled "weather" that contains a single object
-            JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
-            weatherID = weatherObject.getInt(OWM_WEATHER_ID);
-            weatherDescription = weatherObject.getString(OWM_WEATHER_DESCRIPTION);
-            weatherIcon = weatherObject.getString(OWM_WEATHER_ICON);
-
-            //Create a weather entry and pass in the collected values.
-            WeatherEntry newEntry = new WeatherEntry();
-            newEntry.setLocation(location);
-            newEntry.setDateObject(dateObject);
-            newEntry.setDateShort(shortDate);
-            newEntry.setIsToday(currentTime.get(Calendar.DATE) == calendarObject.get(Calendar.DATE)); //True if this weather information is from today
-            newEntry.setWeatherTime(shortTime);
-            newEntry.setTemperature(temperature);
-            newEntry.setWeatherCode(weatherID);
-            newEntry.setWeatherDescription(getWeatherDescription(context,weatherID, weatherDescription));
-            newEntry.setWeatherIcon(getWeatherIcon(weatherIcon));
-
-            result.add(newEntry);
-        }
-
-        return result;
-    }
+//    /**
+//     * Take the String representing the complete forecast in JSON Format and
+//     * pull out the data we need to construct the Strings needed.
+//     */
+//    public static ArrayList<WeatherEntry> getEntriesFromJSON(String forecastJsonStr, Context context) throws JSONException{
+//        ArrayList<WeatherEntry> result = new ArrayList<>();
+//
+//        // These are the names of the JSON objects that need to be extracted.
+//        final String OWM_LIST = "list";
+//        final String OWM_WEATHER = "weather";
+//        final String OWM_TEMPERATURE = "temp";
+//        final String OWM_DATE = "dt";
+//        final String OWM_MAIN = "main";
+//        final String OWM_WEATHER_ID = "id";
+//        final String OWM_WEATHER_DESCRIPTION = "description";
+//        final String OWM_WEATHER_ICON = "icon";
+//        final String OWM_CITY = "city";
+//        final String OWM_CITY_NAME = "name";
+//        final String OWM_CITY_COUNTRY = "country";
+//
+//        //Create a JSON object from passed in string
+//        JSONObject forecastJson = new JSONObject(forecastJsonStr);
+//
+//        //Get the location the weather data is for
+//        JSONObject cityObject = forecastJson.getJSONObject(OWM_CITY);
+//        String location = cityObject.getString(OWM_CITY_NAME) + ", "+cityObject.getString(OWM_CITY_COUNTRY);
+//
+//        //Get array of weather data divided in 3 hour chunks
+//        JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
+//
+//        Calendar currentTime = Calendar.getInstance();
+//
+//        for(int i = 0; i < weatherArray.length(); i++) {
+//            String shortDate,shortTime;
+//            double temperature;
+//            int weatherID;
+//            String weatherDescription;
+//            String weatherIcon;
+//
+//            JSONObject dayForecast = weatherArray.getJSONObject(i); //Get this JSON object representing a 3 hour block
+//
+//            long dateTime = dayForecast.getLong(OWM_DATE); //Get the UTC timestamp for this block
+//
+//            //Format the date as the hour followed by am/pm marker. ex "5 PM"
+//            Date dateObject = new Date(dateTime * 1000); //Convert from seconds to milliseconds
+//            Calendar calendarObject = Calendar.getInstance();
+//            calendarObject.setTime(dateObject);
+//            shortDate = new SimpleDateFormat("EEE, MMMM d", Locale.getDefault()).format(dateObject);
+//            shortTime = new SimpleDateFormat("h:mm a",Locale.getDefault()).format(dateObject);
+//
+//            temperature = dayForecast.getJSONObject(OWM_MAIN).getDouble(OWM_TEMPERATURE); //Get temperature from "main" object
+//
+//            //Get the weather id from the weather json array titled "weather" that contains a single object
+//            JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
+//            weatherID = weatherObject.getInt(OWM_WEATHER_ID);
+//            weatherDescription = weatherObject.getString(OWM_WEATHER_DESCRIPTION);
+//            weatherIcon = weatherObject.getString(OWM_WEATHER_ICON);
+//
+//            //Create a weather entry and pass in the collected values.
+//            WeatherEntry newEntry = new WeatherEntry();
+//            newEntry.setLocation(location);
+//            newEntry.setDateObject(dateObject);
+//            newEntry.setDateShort(shortDate);
+//            newEntry.setIsToday(currentTime.get(Calendar.DATE) == calendarObject.get(Calendar.DATE)); //True if this weather information is from today
+//            newEntry.setWeatherTime(shortTime);
+//            newEntry.setTemperature(temperature);
+//            newEntry.setWeatherCode(weatherID);
+//            newEntry.setWeatherDescriptionRaw(getWeatherDescription(context,weatherID, weatherDescription));
+//            newEntry.setWeatherIconIdentifier(getWeatherIcon(weatherIcon));
+//
+//            result.add(newEntry);
+//        }
+//
+//        return result;
+//    }
 
     /**
      * Formats a weather description for display.

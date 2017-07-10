@@ -7,6 +7,7 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.QueryMap;
+import rx.Observable;
 
 /**
  * Api for GET request to retrieve forecast information.
