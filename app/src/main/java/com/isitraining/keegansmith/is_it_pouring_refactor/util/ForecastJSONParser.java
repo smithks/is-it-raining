@@ -1,6 +1,8 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.util;
 
 import android.content.Context;
+
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;

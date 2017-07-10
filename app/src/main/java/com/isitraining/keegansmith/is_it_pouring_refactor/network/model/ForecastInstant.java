@@ -1,4 +1,4 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor.Network.Model;
+package com.isitraining.keegansmith.is_it_pouring_refactor.network.model;
 
 import java.util.List;
 

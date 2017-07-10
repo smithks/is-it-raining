@@ -1,4 +1,4 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.ui;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,9 +9,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -27,6 +25,15 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.ForecastJSONParser;
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.WeatherEntry;
+import com.isitraining.keegansmith.is_it_pouring_refactor.network.ForecastRepository;
+import com.isitraining.keegansmith.is_it_pouring_refactor.network.ForecastSubscriber;
+import com.isitraining.keegansmith.is_it_pouring_refactor.network.Location;
+import com.isitraining.keegansmith.is_it_pouring_refactor.network.model.ForecastAll;
+import com.isitraining.keegansmith.is_it_pouring_refactor.network.model.ForecastInstant;
+
 import org.json.JSONException;
 
 import java.io.BufferedReader;
@@ -35,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 /**
  * Fragment class that displays today's forecast. If stored forecast data is out of date on resume then a ForecastLoader is used to fetch weather
@@ -44,7 +52,7 @@ import java.util.Calendar;
  * @since 11/21/2016
  */
 
-public class TodayForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<ArrayList<WeatherEntry>> {
+public class TodayForecastFragment extends Fragment implements ForecastSubscriber {
 
     private ProgressBar mProgressBar;
     private RelativeLayout mErrorLayout;
@@ -60,6 +68,8 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private Toast mLastToast;
 
     private String mLocation;
+
+    private ForecastRepository repository;
 
     /**
      * Inflates the view for this fragment and handles initialization.
@@ -78,11 +88,11 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getActivity().getSupportLoaderManager().initLoader(0, null, this);
+        //getActivity().getSupportLoaderManager().initLoader(0, null, this);
     }
 
     /**
-     * Refreshes the forecast on fragment resume.
+     * Refreshes the forecast on fragment resume. TODO: refresh user location?
      */
     @Override
     public void onResume() {
@@ -113,12 +123,14 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
         if (!(networkStatus != null && networkStatus.isConnectedOrConnecting())) { //Display no internet error
             handleLoadError(true, getResources().getString(R.string.today_forecast_error_no_internet));
         } else if (dataOutOfDate || lastForecastTimestamp == 0 || manualRefreshTriggered) { //Fetch new data from loader if data is out of date or no saved data was found or a manual refresh was triggered
-            startForecastLoader();
+            //startForecastLoader();
+            loadForecast();
         } else if (!mDataLoaded) { //If data is not out of date and this is the first load of this fragment then pull from storage
             boolean storageLoadSuccess = readForecastFromFile();
             //If we failed to load from storage then use loader.
             if (!storageLoadSuccess) {
-                startForecastLoader();
+                //startForecastLoader();
+                loadForecast();
             }
         } //Otherwise data is loaded and it is still current, no change to data needed.
     }
@@ -126,15 +138,15 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     /**
      * Kicks off the forecast loader to fetch current forecast data.
      */
-    private void startForecastLoader() {
-        if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
-            if (mProgressBar.getVisibility() != View.VISIBLE) {
-                showLayout(mProgressBar);
-            }
-            //Trigger a reload
-            getActivity().getSupportLoaderManager().restartLoader(0, null, this).forceLoad();
-        }
-    }
+//    private void startForecastLoader() {
+//        if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
+//            if (mProgressBar.getVisibility() != View.VISIBLE) {
+//                showLayout(mProgressBar);
+//            }
+//            //Trigger a reload
+//            getActivity().getSupportLoaderManager().restartLoader(0, null, this).forceLoad();
+//        }
+//    }
 
     /**
      * Populates the forecast from JSON data saved to internal storage.
@@ -305,6 +317,9 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     private void initializeMemberVariables() {
         mDataLoaded = false;
         ERROR_COUNT = 0;
+        String location = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getResources().getString(R.string.user_device_location_lat_long),"");
+        String[] latLon = location.split(" ");
+        repository = new ForecastRepository(new Location(latLon[0], latLon[1]));
 
         //Set listener for retry button.
         mErrorLayout.findViewById(R.id.today_forecast_retry_button).setOnClickListener(new View.OnClickListener() {
@@ -355,7 +370,8 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             ERROR_COUNT = 0; //Reset error count
         } else { //Automatically retry if the error was encountered from loader.
             showToast(getResources().getString(R.string.today_forecast_current_error_loading_toast), Toast.LENGTH_LONG);
-            startForecastLoader();
+            //startForecastLoader();
+            loadForecast();
         }
     }
 
@@ -372,30 +388,37 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
     }
 
 
-    /**
-     * Callback that is hit when the forecast loader delivers its results.
-     * @param loader the loader that did the work
-     * @param data   the result from the loader
-     */
-    @Override
-    public void onLoadFinished(Loader<ArrayList<WeatherEntry>> loader, ArrayList<WeatherEntry> data) {
-        if (data == null) { //Error loading data, show error message
-            handleLoadError(false, null);
-            return;
-        }
+    public void loadForecast(){
+        repository.subscribe(this);
 
-        //Update the weather forecast
-        processWeatherObjects(data);
     }
 
-    @Override
-    public Loader<ArrayList<WeatherEntry>> onCreateLoader(int id, Bundle args) {
-        return new ForecastLoader(getActivity());
-    }
 
-    @Override
-    public void onLoaderReset(Loader<ArrayList<WeatherEntry>> loader) {
-    }
+//    /**
+//     * Callback that is hit when the forecast loader delivers its results.
+//     * @param loader the loader that did the work
+//     * @param data   the result from the loader
+//     */
+//    @Override
+//    public void onLoadFinished(Loader<ArrayList<WeatherEntry>> loader, ArrayList<WeatherEntry> data) {
+//        if (data == null) { //Error loading data, show error message
+//            handleLoadError(false, null);
+//            return;
+//        }
+//
+//        //Update the weather forecast
+//        processWeatherObjects(data);
+//    }
+//
+//
+//    @Override
+//    public Loader<ArrayList<WeatherEntry>> onCreateLoader(int id, Bundle args) {
+//        return new ForecastLoader(getActivity());
+//    }
+//
+//    @Override
+//    public void onLoaderReset(Loader<ArrayList<WeatherEntry>> loader) {
+//    }
 
     /**
      * Returns a string to display to the user based on the weather code that is passed in.
@@ -418,5 +441,10 @@ public class TodayForecastFragment extends Fragment implements LoaderManager.Loa
             result = getResources().getString(R.string.today_forecast_current_no_precipitation);
         }
         return result;
+    }
+
+    @Override
+    public void onForecastUpdated(ForecastAll forecast) {
+        List<ForecastInstant> forecastList = forecast.getList();
     }
 }

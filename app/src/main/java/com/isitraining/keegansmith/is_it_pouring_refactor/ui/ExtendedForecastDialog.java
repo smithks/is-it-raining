@@ -1,4 +1,4 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.ui;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -15,7 +15,8 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.isitraining.keegansmith.is_it_pouring_refactor.WeatherEntry;
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.WeatherEntry;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,10 +1,13 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.ui;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
+
 /**
  * Preference fragment for handling display and manipulation of preferences.
  * @author Keegan Smith

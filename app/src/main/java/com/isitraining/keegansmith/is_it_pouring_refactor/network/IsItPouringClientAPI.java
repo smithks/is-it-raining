@@ -1,4 +1,4 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor.Network;
+package com.isitraining.keegansmith.is_it_pouring_refactor.network;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -6,7 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Singleton class to return an instance of retrofit.
+ * Singleton class to return an instance of retrofit. TODO pull out into dagger 2 di
  * Created by keegansmith on 7/10/17.
  */
 
@@ -19,7 +19,7 @@ public class IsItPouringClientAPI {
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
             interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
-            Retrofit retrofit = new Retrofit.Builder()
+            retrofit = new Retrofit.Builder()
                     .baseUrl("http://api.openweathermap.org/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .client(client)

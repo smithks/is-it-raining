@@ -1,4 +1,4 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.ui;
 
 import android.Manifest;
 import android.content.Intent;
@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
 
 /**
  * Launching activity for Is It Pouring.

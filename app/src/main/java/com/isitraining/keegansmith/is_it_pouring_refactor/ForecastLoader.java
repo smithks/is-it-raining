@@ -6,7 +6,9 @@ import android.net.Uri;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
-import com.isitraining.keegansmith.is_it_pouring_refactor.WeatherEntry;
+import com.isitraining.keegansmith.is_it_pouring_refactor.ui.TodayForecastFragment;
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.ForecastJSONParser;
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.WeatherEntry;
 
 import org.json.JSONException;
 
@@ -22,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
-import static com.isitraining.keegansmith.is_it_pouring_refactor.TodayForecastActivity.LOG_TAG;
+import static com.isitraining.keegansmith.is_it_pouring_refactor.ui.TodayForecastActivity.LOG_TAG;
 
 /**
  * Loader Class that pulls forecast information from opeaweathermap.org.
@@ -30,6 +32,7 @@ import static com.isitraining.keegansmith.is_it_pouring_refactor.TodayForecastAc
  * A copy of the weather data is stored to internal storage to avoid duplicate calls.
  * @author Keegan
  * @since 12/14/16
+ * //TODO MARK FOR DELETION
  */
 public class ForecastLoader extends AsyncTaskLoader<ArrayList<WeatherEntry>> {
 

@@ -1,7 +1,9 @@
-package com.isitraining.keegansmith.is_it_pouring_refactor;
+package com.isitraining.keegansmith.is_it_pouring_refactor.ui;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+
+import com.isitraining.keegansmith.is_it_pouring_refactor.R;
 
 /**
  * Parent activity for settings preference fragment.
