@@ -22,11 +22,11 @@ import java.util.Locale;
 
 public class ForecastModel implements ForecastSubscriber {
 
-    ForecastRepository repository;
-    ForecastViewModelInterface viewModel;
-    Location location;
+    private ForecastRepository repository;
+    private ForecastViewModel viewModel;
+    private Location location;
 
-    public ForecastModel(Location location, ForecastViewModelInterface viewModel) {
+    public ForecastModel(Location location, ForecastViewModel viewModel) {
         this.location = location;
         this.viewModel = viewModel;
         repository = new ForecastRepository(location);

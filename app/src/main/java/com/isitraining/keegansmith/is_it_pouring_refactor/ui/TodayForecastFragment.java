@@ -25,27 +25,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.isitraining.keegansmith.is_it_pouring_refactor.model.ForecastViewInterface;
 import com.isitraining.keegansmith.is_it_pouring_refactor.model.ForecastViewModel;
-import com.isitraining.keegansmith.is_it_pouring_refactor.model.ForecastViewModelInterface;
-import com.isitraining.keegansmith.is_it_pouring_refactor.util.ForecastJSONParser;
 import com.isitraining.keegansmith.is_it_pouring_refactor.R;
+import com.isitraining.keegansmith.is_it_pouring_refactor.util.WeatherData;
 import com.isitraining.keegansmith.is_it_pouring_refactor.util.WeatherEntry;
-import com.isitraining.keegansmith.is_it_pouring_refactor.network.ForecastRepository;
-import com.isitraining.keegansmith.is_it_pouring_refactor.network.ForecastSubscriber;
-import com.isitraining.keegansmith.is_it_pouring_refactor.network.Location;
-import com.isitraining.keegansmith.is_it_pouring_refactor.network.model.ForecastAll;
-import com.isitraining.keegansmith.is_it_pouring_refactor.network.model.ForecastInstant;
 
-import org.json.JSONException;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
+import rx.Subscriber;
 
 /**
  * Fragment class that displays today's forecast. If stored forecast data is out of date on resume then a ForecastLoader is used to fetch weather
@@ -55,7 +44,7 @@ import java.util.List;
  * @since 11/21/2016
  */
 
-public class TodayForecastFragment extends Fragment implements ForecastViewInterface {
+public class TodayForecastFragment extends Fragment {
 
     private ProgressBar mProgressBar;
     private RelativeLayout mErrorLayout;
@@ -72,7 +61,7 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
 
     private String mLocation;
 
-    ForecastViewModelInterface viewModel;
+    ForecastViewModel viewModel;
 
     /**
      * Inflates the view for this fragment and handles initialization.
@@ -91,7 +80,6 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //getActivity().getSupportLoaderManager().initLoader(0, null, this);
     }
 
     /**
@@ -100,56 +88,63 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
     @Override
     public void onResume() {
         super.onResume();
-        refreshForecast();
+        bindToViewModel();
     }
 
-    /**
-     * Checks the current state of forecast data and refreshes data if needed or pulls the data from
-     * storage.
-     */
-    public void refreshForecast() {
-        //Pull the timestamp of the last load to see if the data is out of date
-        boolean dataOutOfDate = false;
-        long lastForecastTimestamp = PreferenceManager.getDefaultSharedPreferences(getContext()).getLong(getResources().getString(R.string.last_forecast_timestamp), 0);
-        if (lastForecastTimestamp > 0) { //Data present, see if it is current
-            long currentTimestamp = Calendar.getInstance().getTimeInMillis();
-            if (currentTimestamp - lastForecastTimestamp > 3600000) { //If the saved forecast data is over an hour old then refresh the data
-                dataOutOfDate = true;
-            }
-        }
-        dataOutOfDate = true; //TODO remove this line, forces network query for testing.
-
-        boolean manualRefreshTriggered = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(getResources().getString(R.string.trigger_reload_key),false);
-
-        //Make sure we have internet access
-        NetworkInfo networkStatus = ((ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-        if (!(networkStatus != null && networkStatus.isConnectedOrConnecting())) { //Display no internet error
-            handleLoadError(true, getResources().getString(R.string.today_forecast_error_no_internet));
-        } else if (dataOutOfDate || lastForecastTimestamp == 0 || manualRefreshTriggered) { //Fetch new data from loader if data is out of date or no saved data was found or a manual refresh was triggered
-            //startForecastLoader();
-            //requestForecast();
-        } else if (!mDataLoaded) { //If data is not out of date and this is the first load of this fragment then pull from storage
-            //boolean storageLoadSuccess = readForecastFromFile();
-            //If we failed to load from storage then use loader.
-            //if (!storageLoadSuccess) {
-                //startForecastLoader();
-                //requestForecast();
-            //}
-        } //Otherwise data is loaded and it is still current, no change to data needed.
-    }
+    //TODO: remove this block if we aren't going to cache manually
+//    /**
+//     * Checks the current state of forecast data and refreshes data if needed or pulls the data from
+//     * storage.
+//     */
+//    public void refreshForecast() {
+//        //Pull the timestamp of the last load to see if the data is out of date
+//        boolean dataOutOfDate = false;
+//        long lastForecastTimestamp = PreferenceManager.getDefaultSharedPreferences(getContext()).getLong(getResources().getString(R.string.last_forecast_timestamp), 0);
+//        if (lastForecastTimestamp > 0) { //Data present, see if it is current
+//            long currentTimestamp = Calendar.getInstance().getTimeInMillis();
+//            if (currentTimestamp - lastForecastTimestamp > 3600000) { //If the saved forecast data is over an hour old then refresh the data
+//                dataOutOfDate = true;
+//            }
+//        }
+//
+//        boolean manualRefreshTriggered = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(getResources().getString(R.string.trigger_reload_key),false);
+//
+//        //Make sure we have internet access
+//        NetworkInfo networkStatus = ((ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+//        if (!(networkStatus != null && networkStatus.isConnectedOrConnecting())) { //Display no internet error
+//            handleLoadError(true, getResources().getString(R.string.today_forecast_error_no_internet));
+//        } else if (dataOutOfDate || lastForecastTimestamp == 0 || manualRefreshTriggered) { //Fetch new data from loader if data is out of date or no saved data was found or a manual refresh was triggered
+//            //startForecastLoader();
+//        } else if (!mDataLoaded) { //If data is not out of date and this is the first load of this fragment then pull from storage
+//            boolean storageLoadSuccess = readForecastFromFile();
+//            //If we failed to load from storage then use loader.
+//            if (!storageLoadSuccess) {
+//                //startForecastLoader();
+//            }
+//        } //Otherwise data is loaded and it is still current, no change to data needed.
+//    }
 
 //    /**
-//     * Kicks off the forecast loader to fetch current forecast data.
+//     * Saves the retrieved JSON str to avoid duplicate url connections.
+//     * @param jsonstr the raw json str
 //     */
-//    private void startForecastLoader() {
-//        if (getActivity().getSupportLoaderManager().getLoader(0) != null) {
-//            if (mProgressBar.getVisibility() != View.VISIBLE) {
-//                showLayout(mProgressBar);
-//            }
-//            //Trigger a reload
-//            getActivity().getSupportLoaderManager().restartLoader(0, null, this).forceLoad();
+//    private void saveJSONData(String jsonstr){
+//        try {
+//            FileOutputStream outputStream = getContext().openFileOutput(TodayForecastFragment.FORECAST_FILENAME, Context.MODE_PRIVATE);
+//            OutputStreamWriter streamWriter = new OutputStreamWriter(outputStream);
+//            Log.v(ForecastLoader.class.getSimpleName(),"Saved JSON: "+jsonstr);
+//            streamWriter.write(jsonstr);
+//            streamWriter.close();
+//            outputStream.close();
+//
+//            //Save the timestamp for this data
+//            Calendar dataTimestamp = Calendar.getInstance();
+//            getDefaultSharedPreferences(getContext()).edit().putLong(getContext().getResources().getString(R.string.last_forecast_timestamp), dataTimestamp.getTimeInMillis()).apply();
+//        } catch (IOException exception) {
+//            Log.e(TodayForecastFragment.class.getSimpleName(), "Error caching data: " + exception.getMessage());
 //        }
 //    }
+
 
 //    /**
 //     * Populates the forecast from JSON data saved to internal storage.
@@ -185,65 +180,6 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
 //        } catch (JSONException exception) {
 //            Log.e(TodayForecastFragment.class.getSimpleName(), "Error parsing JSON: " + exception.getMessage());
 //            return false;
-//        }
-//    }
-//
-//    /**
-//     * Uses an array of Weather Entry items and updates the current forecast and future forecast information.
-//     * @param entries the weather entries to use
-//     */
-//    private void processWeatherObjects(ArrayList<WeatherEntry> entries) {
-//        //Openweathermap sometimes returns older data, find the record closest to the current time to display
-//        long rightNowEpoch = Calendar.getInstance().getTime().getTime();
-//        boolean currentWeatherFound = false;
-//        int weatherIndex = 0;
-//
-//        //Find the entry that is closest to the current time to use as the current weather forecast
-//        WeatherEntry previous = null, following = null, targetEntry = null;
-//        while (weatherIndex < entries.size() && !currentWeatherFound) {
-//            WeatherEntry currentEntry = entries.get(weatherIndex);
-//            long entryEpoch = currentEntry.getDateObject().getTime();
-//
-//            if (rightNowEpoch - entryEpoch > 0) { //This is a historical weather entry
-//                previous = currentEntry;
-//            } else if (rightNowEpoch - entryEpoch < 0) { //This is a future weather entry
-//                following = currentEntry;
-//            } else { //This entry is for this exact moment (should never happen)
-//                targetEntry = currentEntry;
-//            }
-//
-//            if (previous != null && following != null) { //Found surrounding entries, find the closest.
-//                long previousEpoch = previous.getDateObject().getTime();
-//                long followingEpoch = following.getDateObject().getTime();
-//                if (Math.abs(rightNowEpoch - previousEpoch) < Math.abs(rightNowEpoch - followingEpoch)) { //Past entry is closer
-//                    targetEntry = previous;
-//                } else { //Future entry is closer
-//                    targetEntry = following;
-//                }
-//            } else if (previous == null && following != null) { //Only future weather found, use that entry
-//                targetEntry = following;
-//            } // Only other situations are target entry already found or only past found and need a future
-//
-//            //If we found a target entry
-//            if (targetEntry != null) {
-//                currentWeatherFound = true;
-//            }
-//
-//            weatherIndex++;
-//        }
-//
-//        if (targetEntry == null) { //No appropriate entry was found display error.
-//            handleLoadError(false, null);
-//        } else { //Appropriate entry found, display it and the updated weather
-//            String currentWeatherCode = getCurrentWeatherString(targetEntry.getWeatherCode());
-//
-//            mLocation = targetEntry.getLocation();
-//
-//            updateForecastText(currentWeatherCode);
-//            updateExtendedForecast(entries);
-//
-//            PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putBoolean(getResources().getString(R.string.trigger_reload_key),false).apply(); //Clear manual refresh trigger
-//            mDataLoaded = true;
 //        }
 //    }
 
@@ -315,21 +251,28 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
     }
 
     /**
+     * Binds this view to the WeatherData observable exposed by the ForecastViewModel class.
+     * Called on resume or whenever we want to fetch the current weather data.
+     */
+    private void bindToViewModel(){
+        viewModel = new ForecastViewModel(getActivity().getApplicationContext());
+        showLayout(mProgressBar);
+        viewModel.getForecastObservable().subscribe(new ForecastSubscriber());
+    }
+
+    /**
      * Initializes the member variables of this fragment.
      */
     private void initializeMemberVariables() {
         mDataLoaded = false;
         ERROR_COUNT = 0;
-        String location = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(getResources().getString(R.string.user_device_location_lat_long),"");
-        String[] latLon = location.split(" ");
-        viewModel = new ForecastViewModel(getActivity().getApplicationContext());
 
         //Set listener for retry button.
         mErrorLayout.findViewById(R.id.today_forecast_retry_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showToast(getResources().getString(R.string.today_forecast_current_retrying_toast), Toast.LENGTH_SHORT);
-                refreshForecast();
+                bindToViewModel();
             }
         });
 
@@ -373,8 +316,7 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
             ERROR_COUNT = 0; //Reset error count
         } else { //Automatically retry if the error was encountered from loader.
             showToast(getResources().getString(R.string.today_forecast_current_error_loading_toast), Toast.LENGTH_LONG);
-            //startForecastLoader();
-            //requestForecast();
+            bindToViewModel();
         }
     }
 
@@ -391,25 +333,25 @@ public class TodayForecastFragment extends Fragment implements ForecastViewInter
     }
 
     /**
-     * Returns a string to display to the user based on the weather code that is passed in.
-     * @param weatherCode the weather code to check
-     * @return a user facing string representing the current weather
+     * Subscriber class that listens for changes to the WeatherData subject in the ForecastViewModel.
      */
-    private String getCurrentWeatherString(int weatherCode) {
-        String result;
-        if (weatherCode >= 200 && weatherCode <= 232) { //Thunderstorm
-            result = getResources().getString(R.string.today_forecast_current_thunderstorm);
-        } else if (weatherCode >= 300 && weatherCode <= 321) { //Drizzle
-            result = getResources().getString(R.string.today_forecast_current_small_chance_rain);
-        } else if (weatherCode == 500) {
-            result = getResources().getString(R.string.today_forecast_current_small_chance_rain);
-        } else if (weatherCode >= 501 && weatherCode <= 531) { //Rain
-            result = getResources().getString(R.string.today_forecast_current_raining);
-        } else if (weatherCode >= 600 && weatherCode <= 622) { //Snow
-            result = getResources().getString(R.string.today_forecast_current_snow);
-        } else {
-            result = getResources().getString(R.string.today_forecast_current_no_precipitation);
+    private class ForecastSubscriber extends Subscriber<WeatherData>{
+
+        @Override
+        public void onCompleted() {
+            Log.v(this.getClass().getSimpleName()," Completed");
         }
-        return result;
+
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onNext(WeatherData weatherData) {
+            updateForecastText(weatherData.getCurrent().getWeatherDescriptionFriendly());
+            updateExtendedForecast((ArrayList<WeatherEntry>)weatherData.getExtended());
+            showLayout(mWeatherLayout);
+        }
     }
 }

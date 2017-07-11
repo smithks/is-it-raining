@@ -24,7 +24,9 @@ public class WeatherEntry implements Parcelable {
     private String weatherTime; //ex. 4:00 pm
     private boolean isToday;
     private String weatherDescriptionRaw;
+    private String weatherDescriptionFriendly;
     private String weatherIconIdentifier;
+    private int weatherIcon;
 
     protected WeatherEntry(Parcel in) {
         weatherCode = in.readInt();
@@ -33,7 +35,9 @@ public class WeatherEntry implements Parcelable {
         weatherTime = in.readString();
         isToday = in.readInt() == 1;
         weatherDescriptionRaw = in.readString();
+        weatherDescriptionFriendly = in.readString();
         weatherIconIdentifier = in.readString();
+        weatherIcon = in.readInt();
     }
 
     public WeatherEntry() {
@@ -74,6 +78,14 @@ public class WeatherEntry implements Parcelable {
 
     public void setWeatherIconIdentifier(String weatherIconIdentifier) {
         this.weatherIconIdentifier = weatherIconIdentifier;
+    }
+
+    public int getWeatherIcon(){
+        return weatherIcon;
+    }
+
+    public void setWeatherIcon(int icon){
+        weatherIcon = icon;
     }
 
     public double getTemperature() {
@@ -124,6 +136,14 @@ public class WeatherEntry implements Parcelable {
         this.weatherDescriptionRaw = weatherDescriptionRaw;
     }
 
+    public String getWeatherDescriptionFriendly(){
+        return weatherDescriptionFriendly;
+    }
+
+    public void setWeatherDescriptionFriendly(String descriptionFriendly){
+        weatherDescriptionFriendly = descriptionFriendly;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -137,6 +157,8 @@ public class WeatherEntry implements Parcelable {
         parcel.writeString(weatherTime);
         parcel.writeInt(isToday? 1: 0);
         parcel.writeString(weatherDescriptionRaw);
+        parcel.writeString(weatherDescriptionFriendly);
         parcel.writeString(weatherIconIdentifier);
+        parcel.writeInt(weatherIcon);
     }
 }

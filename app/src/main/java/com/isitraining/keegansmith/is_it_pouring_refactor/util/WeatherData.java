@@ -24,4 +24,12 @@ public class WeatherData {
     public List<WeatherEntry> getExtended() {
         return extended;
     }
+
+    public void setCurrent(WeatherEntry current) {
+        this.current = current;
+    }
+
+    public void setExtended(List<WeatherEntry> extended) {
+        this.extended = extended;
+    }
 }
